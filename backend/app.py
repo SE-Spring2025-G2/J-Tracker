@@ -696,7 +696,7 @@ with open("application.yml") as f:
     # ca=certifi.where()
     app.config["MONGODB_SETTINGS"] = {
         "db": "appTracker",
-        "host": f"mongodb+srv://{username}:{password}@{cluster_url}/",
+        "host": f"mongodb+srv://aranya:psswrd@cs510-ats.0pmne.mongodb.net/",
     }
 db = MongoEngine()
 db.init_app(app)
@@ -778,4 +778,4 @@ def get_new_application_id(user_id):
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5001)
