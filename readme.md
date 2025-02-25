@@ -14,7 +14,7 @@ The process of applying for jobs and internships is not a cakewalk. Managing job
 Our application keeps track of the jobs you've added to your wish list. It also keeps track of the companies you've already applied to and keeps a list of any rejections. Rather than having the user browse each company's site for potential prospects, our application allows the applicant to search for them directly using basic keywords. Any prospective work offers can then be added to the applicant's wishlist.
 
 ## New Features in Phase 3
-🎥[Phase-3 Demo Video](https://youtu.be/VKTob1N19ug)
+🎥[Phase-2 Demo Video](https://www.youtube.com/watch?v=VKTob1N19ug)
 
 ## ⭐ Highlight of Phase 3 ⭐
 ### Dockerization 🗃️

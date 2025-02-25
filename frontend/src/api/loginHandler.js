@@ -17,8 +17,15 @@ export const signUp = (params) => {
   });
 };
 
-export const storeToken = (obj) => {
-  localStorage.setItem("token", obj.token);
-  localStorage.setItem("expiry", obj.expiry);
-  localStorage.setItem("userId", obj.userId);
+export const storeToken = (res) => {
+  console.log("Storing Token:", res);
+
+  if (!res.token) {
+      console.error("No token received:", res);
+      return;
+  }
+
+  localStorage.setItem("token", res.token);
+  localStorage.setItem("expiry", res.expiry);
+  localStorage.setItem("userId", res.userId);
 };
