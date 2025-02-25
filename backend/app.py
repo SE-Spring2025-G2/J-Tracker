@@ -43,12 +43,17 @@ def create_app():
     CORS(app)
 
     # get all the variables from the application.yml file
+    # with open("application.yml") as f:
+    #     info = yaml.load(f, Loader=yaml.FullLoader)
+    #     GOOGLE_CLIENT_ID = info["GOOGLE_CLIENT_ID"]
+    #     GOOGLE_CLIENT_SECRET = info["GOOGLE_CLIENT_SECRET"]
+    #     CONF_URL = info["CONF_URL"]
+    #     app.secret_key = info['SECRET_KEY']
+
     with open("application.yml") as f:
         info = yaml.load(f, Loader=yaml.FullLoader)
-        GOOGLE_CLIENT_ID = info["GOOGLE_CLIENT_ID"]
-        GOOGLE_CLIENT_SECRET = info["GOOGLE_CLIENT_SECRET"]
-        CONF_URL = info["CONF_URL"]
-        app.secret_key = info['SECRET_KEY']
+        app.secret_key = info.get("SECRET_KEY", "default_secret_key")  # Use a default value if not found
+
 
     app.config["CORS_HEADERS"] = "Content-Type"
 
@@ -363,47 +368,103 @@ def create_app():
             print(err)
             return jsonify({"error": "Internal server error"}), 500
 
+    # @app.route("/users/login", methods=["POST"])
+    # def login():
+    #     """
+    #     Logs in the user and creates a new authorization token and stores it in the database
+    #     """
+    #     try:
+    #         data = json.loads(request.data)
+
+    #         if "username" not in data or "password" not in data:
+    #             return jsonify({"error": "Missing username or password"}), 400
+
+    #         # Find user by username
+    #         user = Users.objects(username=data["username"]).first()
+    #         if not user:
+    #             print("❌ User not found:", data["username"])
+    #             return jsonify({"error": "User not found"}), 400
+
+    #         # Debug: Print stored and entered password hashes
+    #         entered_password_hash = hashlib.md5(data["password"].encode()).hexdigest()
+    #         print(f"🔍 Entered Hash: {entered_password_hash}")
+    #         print(f"🔍 Stored Hash: {user.password}")
+
+    #         # Compare hashed password
+    #         if user.password != entered_password_hash:
+    #             print("❌ Password does not match")
+    #             return jsonify({"error": "Wrong username or password"}), 400
+
+    #         # Generate session token
+    #         expiry = datetime.now() + timedelta(days=1)
+    #         expiry_str = expiry.strftime("%m/%d/%Y, %H:%M:%S")
+    #         token = f"{user.id}.{uuid.uuid4()}"
+
+    #         # Store token
+    #         user.authTokens.append({"token": token, "expiry": expiry_str})
+    #         user.save()
+
+    #         print("✅ Login successful")
+    #         return jsonify({
+    #             "message": "Login successful",
+    #             "token": token,
+    #             "expiry": expiry_str
+    #         }), 200
+
+    #     except Exception as e:
+    #         print("❌ Error in login:", e)
+    #         return jsonify({"error": "Internal server error"}), 500
+
     @app.route("/users/login", methods=["POST"])
     def login():
         """
-        Logs in the user and creates a new authorization token and stores in the database
-
-        :return: JSON object with status and message
+        Logs in the user and creates a new authorization token and stores it in the database
         """
         try:
-            try:
-                data = json.loads(request.data)
-                _ = data["username"]
-                _ = data["password"]
-            except:
-                return jsonify({"error": "Username or password missing"}), 400
-            password_hash = hashlib.md5(data["password"].encode()).hexdigest()
-            user = Users.objects(
-                username=data["username"], password=password_hash
-            ).first()
-            if user is None:
-                return jsonify({"error": "Wrong username or password"})
-            token = str(user["id"]) + "." + str(uuid.uuid4())
+            data = json.loads(request.data)
+
+            if "username" not in data or "password" not in data:
+                return jsonify({"error": "Missing username or password"}), 400
+
+            # Find user by username
+            user = Users.objects(username=data["username"]).first()
+            if not user:
+                return jsonify({"error": "User not found"}), 400
+
+            # Hash entered password and compare with stored password
+            entered_password_hash = hashlib.md5(data["password"].encode()).hexdigest()
+            if user.password != entered_password_hash:
+                return jsonify({"error": "Wrong username or password"}), 400
+
+            # Generate session token
             expiry = datetime.now() + timedelta(days=1)
             expiry_str = expiry.strftime("%m/%d/%Y, %H:%M:%S")
-            auth_tokens_new = user["authTokens"] + [
-                {"token": token, "expiry": expiry_str}
-            ]
-            user.update(authTokens=auth_tokens_new)
-            profileInfo = {
-                "id": user.id,
-                "fullName": user.fullName,
-                "institution": user.institution,
-                "skills": user.skills,
-                "phone_number": user.phone_number,
-                "address": user.address,
-                "locations": user.locations,
-                "jobLevels": user.job_levels,
-                "email": user.email
-            }
-            return jsonify({"profile": profileInfo, "token": token, "expiry": expiry_str})
-        except:
+            token = f"{user.id}.{uuid.uuid4()}"
+
+            # Store token
+            user.authTokens.append({"token": token, "expiry": expiry_str})
+            user.save()
+
+            # Return full profile in response
+            return jsonify({
+                "message": "Login successful",
+                "token": token,
+                "expiry": expiry_str,
+                "profile": {
+                    "id": user.id,
+                    "fullName": user.fullName,
+                    "username": user.username,
+                    "email": user.email,
+                    "phone_number": user.phone_number,
+                    "address": user.address,
+                    "institution": user.institution
+                }
+            }), 200
+        except Exception as e:
+            print("Error in login:", e)
             return jsonify({"error": "Internal server error"}), 500
+
+
 
     @app.route("/users/logout", methods=["POST"])
     def logout():
@@ -688,16 +749,34 @@ def create_app():
 app = create_app()
 
 
+# with open("application.yml") as f:
+#     info = yaml.load(f, Loader=yaml.FullLoader)
+#     username = info["USERNAME"]
+#     password = info["PASSWORD"]
+#     cluster_url = info["CLUSTER_URL"]
+#     # ca=certifi.where()
+#     app.config["MONGODB_SETTINGS"] = {
+#         "db": "appTracker",
+#         "host": f"mongodb+srv://{username}:{password}@{cluster_url}/",
+#     }
+
+# username = "test_user"
+# password = "test_pass"
+# cluster_url = "localhost"
+
 with open("application.yml") as f:
     info = yaml.load(f, Loader=yaml.FullLoader)
-    username = info["USERNAME"]
-    password = info["PASSWORD"]
-    cluster_url = info["CLUSTER_URL"]
-    # ca=certifi.where()
-    app.config["MONGODB_SETTINGS"] = {
-        "db": "appTracker",
-        "host": f"mongodb+srv://{username}:{password}@{cluster_url}/",
-    }
+
+MONGO_USERNAME = info.get("USERNAME", "default_user")
+MONGO_PASSWORD = info.get("PASSWORD", "default_pass")
+MONGO_CLUSTER = info.get("CLUSTER_URL", "cluster0.jmi6a.mongodb.net")
+
+app.config["MONGODB_SETTINGS"] = {
+    "db": "appTracker",
+    "host": f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_CLUSTER}/appTracker?retryWrites=true&w=majority",
+}
+
+
 db = MongoEngine()
 db.init_app(app)
 
