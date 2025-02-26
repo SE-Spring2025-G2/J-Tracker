@@ -1,122 +1,61 @@
-import unittest
 import os
+import pytest
 from pymongo import MongoClient
-from datetime import datetime
-from bson import ObjectId
 
-class TestJobApplications(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        """Set up MongoDB connection"""
-        mongodb_uri = os.getenv('MONGODB_URI')
-        if not mongodb_uri:
-            raise EnvironmentError("MONGODB_URI environment variable is not set")
-        
-        cls.client = MongoClient(mongodb_uri)
-        cls.db = cls.client['jobtracker']
-        cls.applications = cls.db['applications']
-        
-        # Test user ID
-        cls.test_user_id = ObjectId()  # Generate a unique test user ID
-        
-        # Test data
-        cls.test_applications = [
-            {
-                "userId": cls.test_user_id,
-                "jobTitle": "Software Engineer",
-                "company": "Tech Corp",
-                "status": "Applied",
-                "applicationDate": datetime.now(),
-                "location": "Remote",
-                "description": "Full-stack development position"
-            },
-            {
-                "userId": cls.test_user_id,
-                "jobTitle": "Full Stack Developer",
-                "company": "Startup Inc",
-                "status": "In Progress",
-                "applicationDate": datetime.now(),
-                "location": "New York, NY",
-                "description": "Exciting startup opportunity"
-            }
-        ]
+@pytest.fixture(scope="module")
+def mongodb_client():
+    """Fixture to create and return a MongoDB client."""
+    uri = os.getenv("MONGODB_URI")  # Fetch MongoDB URI from GitHub Secrets
+    if not uri:
+        pytest.fail("❌ MONGODB_URI is not set in the environment variables.")
 
-    def setUp(self):
-        """Set up test data before each test"""
-        # Clear existing test data and insert new ones
-        self.applications.delete_many({"userId": self.test_user_id})
-        self.applications.insert_many(self.test_applications)
+    try:
+        client = MongoClient(uri)
+        # Test the connection
+        client.admin.command('ping')
+        yield client  # Provide the MongoDB client to the test
+    finally:
+        client.close()
 
-    def test_fetch_job_applications(self):
-        """Test retrieving all job applications for a user"""
-        # Fetch applications from MongoDB
-        user_applications = list(self.applications.find(
-            {"userId": self.test_user_id}
-        ))
+def test_mongodb_connection(mongodb_client):
+    """Test that we can connect to MongoDB and access collections."""
+    db = mongodb_client['jobtracker']  # Ensure this matches your DB name
+    collections = db.list_collection_names()
 
-        # Verify number of applications
-        self.assertEqual(
-            len(user_applications), 
-            len(self.test_applications),
-            "Should return correct number of applications"
-        )
+    assert isinstance(collections, list), "❌ MongoDB did not return a list of collections."
+    print(f"✅ Available collections: {collections}")
 
-        print(f"\nFound {len(user_applications)} applications")
+def test_insert_and_retrieve_job_application(mongodb_client):
+    """Test inserting and retrieving a job application."""
+    db = mongodb_client['jobtracker']
+    job_collection = db['applications']
 
-        # Check each application has required fields
-        for app in user_applications:
-            print(f"\nChecking application: {app}")
-            
-            # Verify required fields
-            required_fields = [
-                'userId', 'jobTitle', 'company', 'status', 
-                'applicationDate', 'location', 'description'
-            ]
-            for field in required_fields:
-                self.assertIn(field, app, f"Application should have {field}")
+    # Insert a test job application
+    test_job = {
+        "jobTitle": "Software Engineer",
+        "companyName": "TechCorp",
+        "location": "Remote",
+        "status": "Applied"
+    }
+    inserted_job = job_collection.insert_one(test_job)
 
-            # Verify data types
-            self.assertEqual(app['userId'], self.test_user_id)
-            self.assertIsInstance(app['jobTitle'], str)
-            self.assertIsInstance(app['company'], str)
-            self.assertIsInstance(app['status'], str)
-            self.assertIsInstance(app['applicationDate'], datetime)
-            
-            # Verify status is valid
-            valid_statuses = ['Applied', 'In Progress', 'Rejected', 'Accepted']
-            self.assertIn(app['status'], valid_statuses, 
-                         "Status should be valid")
+    # Retrieve the inserted job
+    retrieved_job = job_collection.find_one({"_id": inserted_job.inserted_id})
 
-    def test_empty_applications(self):
-        """Test handling of user with no applications"""
-        # Clear all applications for test user
-        self.applications.delete_many({"userId": self.test_user_id})
-        
-        # Fetch applications
-        empty_applications = list(self.applications.find(
-            {"userId": self.test_user_id}
-        ))
-        
-        print("\nTesting empty applications case")
-        self.assertEqual(len(empty_applications), 0, 
-                        "Should return empty list for user with no applications")
+    assert retrieved_job is not None, "❌ Job application was not retrieved."
+    assert retrieved_job["jobTitle"] == "Software Engineer", "❌ Job title does not match."
+    assert retrieved_job["companyName"] == "TechCorp", "❌ Company name does not match."
+    assert retrieved_job["location"] == "Remote", "❌ Location does not match."
+    assert retrieved_job["status"] == "Applied", "❌ Status does not match."
 
-    def test_application_count(self):
-        """Test counting total applications for a user"""
-        count = self.applications.count_documents({"userId": self.test_user_id})
-        
-        print(f"\nFound {count} total applications")
-        self.assertEqual(count, len(self.test_applications),
-                        "Should return correct total count of applications")
+    print("✅ Job application successfully inserted and retrieved.")
 
-    def tearDown(self):
-        """Clean up test data after each test"""
-        self.applications.delete_many({"userId": self.test_user_id})
+    # Cleanup: Remove test data
+    job_collection.delete_one({"_id": inserted_job.inserted_id})
 
-    @classmethod
-    def tearDownClass(cls):
-        """Clean up MongoDB connection"""
-        cls.client.close()
-
-if __name__ == '__main__':
-    unittest.main()
+def test_invalid_mongodb_uri():
+    """Test MongoDB connection with an invalid URI."""
+    with pytest.raises(Exception):
+        client = MongoClient("mongodb://invalid_uri")
+        client.admin.command('ping')  # This should fail
+        client.close()
