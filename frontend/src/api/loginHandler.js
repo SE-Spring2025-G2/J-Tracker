@@ -28,4 +28,18 @@ export const storeToken = (res) => {
   localStorage.setItem("token", res.token);
   localStorage.setItem("expiry", res.expiry);
   localStorage.setItem("userId", res.userId);
+  
+  // Store user preferences
+  if (res.profile) {
+      localStorage.setItem("userProfile", JSON.stringify({
+          skills: res.profile.skills || [],
+          job_levels: res.profile.job_levels || [],
+          locations: res.profile.locations || [],
+          institution: res.profile.institution || '',
+          phone_number: res.profile.phone_number || '',
+          address: res.profile.address || '',
+          email: res.profile.email || '',
+          fullName: res.profile.fullName || ''
+      }));
+  }
 };

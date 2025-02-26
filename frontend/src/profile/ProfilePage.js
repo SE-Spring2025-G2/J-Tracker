@@ -19,6 +19,15 @@ const ProfilePage = (props) => {
 	const [ExpLevelModalOpen, setExpLevelModalOpen] = useState(false);
 	const [profileModalOpen, setProfileModalOpen] = useState(false);
 	const [jobModeModalOpen, setJobModeModalOpen] = useState(false);
+	const [pastAnalyses, setPastAnalyses] = useState([]);
+	const [selectedAnalysis, setSelectedAnalysis] = useState(null);
+	const [applicationCount, setApplicationCount] = useState(0);
+	const [applicationsByStatus, setApplicationsByStatus] = useState({
+		applied: 0,
+		rejected: 0,
+		waitingReferral: 0,
+		wishList: 0
+	});
 
 	const profile = props.profile;
 	/**
@@ -42,14 +51,66 @@ const ProfilePage = (props) => {
 		);
 	}
 
+	useEffect(() => {
+		// Fetch past analyses from backend
+		const fetchAnalyses = async () => {
+			try {
+				const response = await fetch('http://127.0.0.1:5000/analyses', {
+					headers: {
+						'Authorization': 'Bearer ' + localStorage.getItem('token'),
+						'Access-Control-Allow-Origin': 'http://127.0.0.1:3000',
+						'Access-Control-Allow-Credentials': 'true'
+					}
+				});
+				
+				if (!response.ok) {
+					throw new Error('Failed to fetch analyses');
+				}
+				
+				const data = await response.json();
+				setPastAnalyses(data);
+			} catch (error) {
+				console.error('Error fetching analyses:', error);
+			}
+		};
+
+		// Fetch applications and analyses
+		Promise.all([
+			fetch('http://127.0.0.1:5000/applications', {
+				headers: {
+					'Authorization': 'Bearer ' + localStorage.getItem('token'),
+					'Access-Control-Allow-Origin': 'http://127.0.0.1:3000',
+					'Access-Control-Allow-Credentials': 'true'
+				}
+			}),
+			fetchAnalyses()
+		])
+		.then(async ([applicationsResponse]) => {
+			const applicationsData = await applicationsResponse.json();
+			setApplicationCount(applicationsData.length);
+			// Count applications by status
+			const counts = {
+				applied: applicationsData.filter(app => app.status === '3').length,
+				rejected: applicationsData.filter(app => app.status === '4').length,
+				waitingReferral: applicationsData.filter(app => app.status === '2').length,
+				wishList: applicationsData.filter(app => app.status === '1').length
+			};
+			setApplicationsByStatus(counts);
+		})
+		.catch(error => {
+			console.error('Error fetching data:', error);
+		});
+	}, []);
+
 	return (
-		<div className='container' style={{ marginLeft: '8%', marginTop: '4%' }}>
+		<div className='container-fluid' style={{ marginLeft: '6%', marginTop: '2%' }}>
 			<div className='row gx-5'>
-				<div className='col-4 my-3'>
+				<div className='col-3'>
 					<div
-						className='card p-4'
+						className='card p-4 mb-4'
 						style={{
-							boxShadow: '0px 5px 12px 0px rgba(0,0,0,0.1)'
+							boxShadow: '0px 5px 12px 0px rgba(0,0,0,0.1)',
+							marginRight: '20px'
 						}}
 					>
 						<FontAwesomeIcon
@@ -115,11 +176,12 @@ const ProfilePage = (props) => {
 						</div>
 					</div>
 				</div>
-				<div className='col-8'>
+				<div className='col-5'>
 					<div
-						className='card my-3 p-2'
+						className='card p-4 mb-4'
 						style={{
-							boxShadow: '0px 5px 12px 0px rgba(0,0,0,0.1)'
+							boxShadow: '0px 5px 12px 0px rgba(0,0,0,0.1)',
+							marginRight: '20px'
 						}}
 					>
 						<div className='card-body'>
@@ -154,9 +216,10 @@ const ProfilePage = (props) => {
 						</div>
 					</div>
 					<div
-						className='card my-3 p-2'
+						className='card p-4 mb-4'
 						style={{
-							boxShadow: '0px 5px 12px 0px rgba(0,0,0,0.1)'
+							boxShadow: '0px 5px 12px 0px rgba(0,0,0,0.1)',
+							marginRight: '20px'
 						}}
 					>
 						<div className='card-body'>
@@ -189,9 +252,10 @@ const ProfilePage = (props) => {
 						</div>
 					</div>
 					<div
-						className='card my-3 p-2'
+						className='card p-4 mb-4'
 						style={{
-							boxShadow: '0px 5px 12px 0px rgba(0,0,0,0.1)'
+							boxShadow: '0px 5px 12px 0px rgba(0,0,0,0.1)',
+							marginRight: '20px'
 						}}
 					>
 						<div className='card-body'>
@@ -225,41 +289,189 @@ const ProfilePage = (props) => {
 							</div>
 						</div>
 					</div>
-					{/* <div
-            className="card my-3 p-2"
-            style={{
-              boxShadow: "0px 5px 12px 0px rgba(0,0,0,0.1)",
-            }}
-          >
-            <div className="card-body">
-              <div className="d-flex justify-content-between px-0 mb-3">
-                <h4 className="card-title mb-0 mx-1">Mode of job</h4>
-                <FontAwesomeIcon
-                  icon={faPenToSquare}
-                  size="1x"
-                  onClick={() => setJobModeModalOpen(true)}
-                  cursor="pointer"
-                />
-              </div>
-              <div className="d-flex flex-wrap">
-                {profile.modes.map((ele, index) => (
-                  <span
-                    className="badge rounded-pill m-1 py-2 px-3"
-                    style={{
-                      border: "2px solid",
-                      // backgroundColor: "#0096c7",
-                      backgroundColor: "#296e85",
-                      fontSize: 16,
-                      fontWeight: "normal",
-                    }}
-                    key={index}
-                  >
-                    {ele.label}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div> */}
+
+					{/* Applications Card */}
+					<div className='card p-4 mb-4' style={{ 
+						boxShadow: '0px 5px 12px 0px rgba(0,0,0,0.1)',
+						marginRight: '20px'
+					}}>
+						<div className='card-body'>
+							<div className='d-flex justify-content-between px-0 mb-3'>
+								<h4 className='card-title mb-0 mx-1'>Applications</h4>
+							</div>
+							<div className='d-flex align-items-center mb-4'>
+								<h2 className='mb-0' style={{ color: '#296e85' }}>{applicationCount}</h2>
+								<span className='ms-2 text-muted'>Total Applications</span>
+							</div>
+
+							{/* Status Grid */}
+							<div className="row g-3">
+								<div className="col-6">
+									<div className="card" style={{ 
+										boxShadow: '0px 3px 8px 0px rgba(0,0,0,0.1)',
+										borderRadius: '10px',
+										border: 'none'
+									}}>
+										<div className="card-body text-center p-3">
+											<h3 style={{ color: '#296E85' }}>{applicationsByStatus.applied}</h3>
+											<h6 className="card-title mb-0">Applied</h6>
+										</div>
+									</div>
+								</div>
+								<div className="col-6">
+									<div className="card" style={{ 
+										boxShadow: '0px 3px 8px 0px rgba(0,0,0,0.1)',
+										borderRadius: '10px',
+										border: 'none'
+									}}>
+										<div className="card-body text-center p-3">
+											<h3 style={{ color: '#296E85' }}>{applicationsByStatus.rejected}</h3>
+											<h6 className="card-title mb-0">Rejected</h6>
+										</div>
+									</div>
+								</div>
+								<div className="col-6">
+									<div className="card" style={{ 
+										boxShadow: '0px 3px 8px 0px rgba(0,0,0,0.1)',
+										borderRadius: '10px',
+										border: 'none'
+									}}>
+										<div className="card-body text-center p-3">
+											<h3 style={{ color: '#296E85' }}>{applicationsByStatus.waitingReferral}</h3>
+											<h6 className="card-title mb-0">Waiting for Referral</h6>
+										</div>
+									</div>
+								</div>
+								<div className="col-6">
+									<div className="card" style={{ 
+										boxShadow: '0px 3px 8px 0px rgba(0,0,0,0.1)',
+										borderRadius: '10px',
+										border: 'none'
+									}}>
+										<div className="card-body text-center p-3">
+											<h3 style={{ color: '#296E85' }}>{applicationsByStatus.wishList}</h3>
+											<h6 className="card-title mb-0">Wish List</h6>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div className='col-4'>
+					<div className='card' style={{ 
+						boxShadow: '0px 5px 12px 0px rgba(0,0,0,0.1)',
+						height: 'calc(100vh - 40px)',
+						overflowY: 'auto'
+					}}>
+						<div className='card-body p-4'>
+							<div className='d-flex justify-content-between px-0 mb-4'>
+								<h4 className='card-title mb-0'>Past Job Match Analyses</h4>
+							</div>
+							
+							{selectedAnalysis && (
+								<div className="alert alert-info mb-4">
+									<div className="d-flex justify-content-between align-items-center mb-3">
+										<span>
+											Analysis for "{selectedAnalysis.searchTerm}"
+										</span>
+										<button 
+											className="btn btn-sm btn-outline-info"
+											onClick={() => setSelectedAnalysis(null)}
+										>
+											Hide Details
+										</button>
+									</div>
+									<small className="d-block text-muted mb-3">
+										Analyzed on {selectedAnalysis.date}
+									</small>
+									
+									<div className="card">
+										<div className="card-body">
+											<h6>Match Overview</h6>
+											<div className="progress mb-3">
+												<div 
+													className="progress-bar" 
+													role="progressbar" 
+													style={{ 
+														width: `${selectedAnalysis.comparison.overallMatch}%`,
+														backgroundColor: '#296E85'
+													}}
+													aria-valuenow={selectedAnalysis.comparison.overallMatch} 
+													aria-valuemin="0" 
+													aria-valuemax="100"
+												>
+													{selectedAnalysis.comparison.overallMatch}%
+												</div>
+											</div>
+											
+											<div className="row g-3">
+												<div className="col-6">
+													<h6>Matching Skills</h6>
+													<ul className="list-group list-group-flush">
+														{selectedAnalysis.comparison.matchingSkills.map((skill, index) => (
+															<li key={index} className="list-group-item text-success">
+																<i className="fas fa-check-circle me-2"></i>{skill}
+															</li>
+														))}
+													</ul>
+												</div>
+												<div className="col-6">
+													<h6>Missing Skills</h6>
+													<ul className="list-group list-group-flush">
+														{selectedAnalysis.comparison.missingSkills.map((skill, index) => (
+															<li key={index} className="list-group-item text-danger">
+																<i className="fas fa-times-circle me-2"></i>{skill}
+															</li>
+														))}
+													</ul>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							)}
+
+							<div className="list-group">
+								{pastAnalyses.map(analysis => (
+									<button
+										key={analysis.id}
+										className={`list-group-item list-group-item-action p-3 mb-2 ${
+											selectedAnalysis?.id === analysis.id ? 'active' : ''
+										}`}
+										onClick={() => setSelectedAnalysis(
+											selectedAnalysis?.id === analysis.id ? null : analysis
+										)}
+										style={{
+											borderRadius: '8px',
+											border: '1px solid #dee2e6'
+										}}
+									>
+										<div className="d-flex w-100 justify-content-between align-items-center">
+											<h5 className="mb-1">{analysis.searchTerm}</h5>
+											<span className={`badge ${
+												analysis.comparison.overallMatch >= 70 ? 'bg-success' :
+												analysis.comparison.overallMatch >= 40 ? 'bg-warning' :
+												'bg-danger'
+											}`}>
+												{analysis.comparison.overallMatch}% Match
+											</span>
+										</div>
+										<small className="text-muted">{analysis.date}</small>
+									</button>
+								))}
+							</div>
+
+							{pastAnalyses.length === 0 && (
+								<div className="text-center mt-4">
+									<p className="text-muted">No analyses yet</p>
+									<p className="small text-muted">
+										Try searching for jobs to see how well your profile matches!
+									</p>
+								</div>
+							)}
+						</div>
+					</div>
 				</div>
 			</div>
 			{locationModalOpen && (
