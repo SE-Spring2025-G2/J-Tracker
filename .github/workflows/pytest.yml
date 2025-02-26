@@ -26,6 +26,8 @@ jobs:
         pip install openai==1.12.0
         pip install python-dotenv==1.0.0
         pip install flask
+        pip install pymongo
+        pip install dnspython
 
     - name: Run test1 (Job Search)
       env:
@@ -41,6 +43,13 @@ jobs:
       run: |
         python -m pytest tests/test2_akulka24.py -v -s --junitxml=test2-report.xml
 
+    - name: Run test3 (Job Applications MongoDB)
+      env:
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        python -m pytest tests/test3_akulka24.py -v -s --junitxml=test3-report.xml
+
     - name: Upload Test 1 Results
       if: always()  # This ensures the step runs even if tests fail
       uses: actions/upload-artifact@v4
@@ -55,4 +64,12 @@ jobs:
       with:
         name: test2-results
         path: test2-report.xml
+        retention-days: 30
+
+    - name: Upload Test 3 Results
+      if: always()  # This ensures the step runs even if tests fail
+      uses: actions/upload-artifact@v4
+      with:
+        name: test3-results
+        path: test3-report.xml
         retention-days: 30
