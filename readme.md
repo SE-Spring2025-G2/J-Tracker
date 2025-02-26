@@ -6,17 +6,18 @@
 [![GitHub issues](https://img.shields.io/github/issues/jashgopani/application-tracking-system)](https://github.com/jashgopani/application-tracking-system/issues)
 [![Github closes issues](https://img.shields.io/github/issues-closed-raw/jashgopani/application-tracking-system)](https://github.com/jashgopani/application-tracking-system/issues?q=is%3Aissue+is%3Aclosed)
 ![GitHub top language](https://img.shields.io/github/languages/top/jashgopani/application-tracking-system)
+![Test Status](https://github.com/ncsu-csc-510/Project2/workflows/Test/badge.svg)
 
 <p align="center"><img width="700" src="./resources/ApplicationTrackingAnimation.gif"></p>
 
-The process of applying for jobs and internships is not a cakewalk. Managing job applications is a time-consuming process. Due to the referrals and deadlines, the entire procedure can be stressful. Our application allows you to track and manage your job application process, as well as regulate it, without the use of cumbersome Excel spreadsheets.
+The internship application and job application process is no picnic. Job application management is time-consuming. With the referrals and deadlines, the whole process can get daunting. Our app enables you to track and organize your job application process, and manage it, without the inconvenience of clunky Excel spreadsheets.
 
-Our application keeps track of the jobs you've added to your wish list. It also keeps track of the companies you've already applied to and keeps a list of any rejections. Rather than having the user browse each company's site for potential prospects, our application allows the applicant to search for them directly using basic keywords. Any prospective work offers can then be added to the applicant's wishlist.
+Our software maintains a record of the work you have wish-listed. It records those companies that you have applied for and records any rejections. Instead of making the user visit each company's website for prospects, our software enables the applicant to look for them directly using simple keywords. Any possible offer of work may then be wish-listed by the applicant.
 
-## New Features in Phase 3
+## New Features in Phase 2
 🎥[Phase-2 Demo Video](https://www.youtube.com/watch?v=VKTob1N19ug)
 
-## ⭐ Highlight of Phase 3 ⭐
+## ⭐ Highlight of Phase 2 ⭐
 ### Dockerization 🗃️
 Containerizing the application with docker has helped us achieve 2 prominent things
 1. Significantly increasing the speed in which one would be able to setup the project on their machines.
