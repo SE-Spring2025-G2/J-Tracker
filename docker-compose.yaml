@@ -5,7 +5,7 @@ services:
             dockerfile: dockerfile.api
         image: ats-api
         ports:
-            - '5001:5000'
+            - '5000:5000'
         networks:
             - ats-network
     client:

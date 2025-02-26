@@ -1,12 +1,7 @@
 FROM python:3.9.7
-
-RUN apt-get update && apt-get install -y build-essential cmake
-
 WORKDIR /app
 
 COPY . .
-RUN python3 -m pip install numpy==1.26.1
-RUN cp -r /usr/local/lib/python3.9/site-packages/numpy/core/include/numpy /usr/local/include
 RUN pip install -r requirements.txt
 EXPOSE 5000
 

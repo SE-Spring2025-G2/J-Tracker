@@ -17,7 +17,6 @@ from fake_useragent import UserAgent
 import pandas as pd
 from jobsearch import get_ai_job_recommendations
 
-
 import yaml
 
 
@@ -1058,11 +1057,9 @@ MONGO_PASSWORD = info.get("PASSWORD", "default_pass")
 MONGO_CLUSTER = info.get("CLUSTER_URL", "cluster0.jmi6a.mongodb.net")
 
 app.config["MONGODB_SETTINGS"] = {
-    "db": "Cluster0",
-    "host": "mongodb+srv://akakadi:PHzJPFrq3t9bNuVN@cluster0.brnbh.mongodb.net/",
-    "tlsCAFile": certifi.where(),
+    "db": "appTracker",
+    "host": f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_CLUSTER}/appTracker?retryWrites=true&w=majority",
 }
-# app.config["tlsAllowInvalidCertificates"]=True
 
 
 db = MongoEngine()
@@ -1145,4 +1142,4 @@ def get_new_application_id(user_id):
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5001)
+    app.run(host='0.0.0.0', port=5000)
