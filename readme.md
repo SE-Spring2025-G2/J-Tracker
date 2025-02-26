@@ -123,15 +123,6 @@ Here, user is able to see different jobs which would be recommended to them acco
 - Interview Prep: AI-driven mock interviews with real-time feedback and role-specific questions.
 - Multi-Platform Sync: Syncs with LinkedIn, job boards, and ATS; mobile app for real-time updates.
 
-## Explanation:
-
-Currently, we have  fundamental steps in our project:
-
-1. The SearchPage where users can search about the Job Postings
-2. The MatchesPage where the users are given suggestion about the jobs according to their interest
-3. The ApplicationsPage on which users will be able to enter and see the position they applied for and are able to edit/delete the details. Any data in any table can be modified at any time during the process
-4. ProfilePage where user is able to upload his skill, level of experience and preferred location. This is so that user can be suggested a job that requires similar skillsets
-
 ## Technologies Used:
 
 - Python
