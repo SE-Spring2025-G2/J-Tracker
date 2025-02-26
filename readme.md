@@ -18,7 +18,7 @@
 [![Documentation Badge](https://img.shields.io/badge/API_Documentation-pdoc-blue.svg)](https://lemon-desert-093c6c80f.2.azurestaticapps.net/)
 [![Documentation Badge](https://img.shields.io/badge/APP_Documentation-compodoc-blue.svg)](https://victorious-sky-08a81ed0f.2.azurestaticapps.net/)
 
-<p align="center"><img width="700" src="./resources/ApplicationTrackingAnimation.gif"></p>
+<p align="center"><img width="700" src="https://github.com/ncsu-csc-510/Project2/blob/main/media/video.gif"></p>
 
 The internship application and job application process is no picnic. Job application management is time-consuming. With the referrals and deadlines, the whole process can get daunting. Our app enables you to track and organize your job application process, and manage it, without the inconvenience of clunky Excel spreadsheets.
 
