@@ -1,382 +1,462 @@
-import React, { Component } from "react";
-import $ from "jquery";
-import SearchCard from "./SearchCard";
-import JobDescription from "../Modals/JobDescription";
-import { Spinner } from "react-bootstrap";
+import React, { Component } from 'react';
+import axios from 'axios';
+// ... existing imports ...
+import $ from 'jquery';
 
-const columns = [
-  {
-    label: "Company Name",
-    id: "companyName",
-  },
-  {
-    label: "Job Title",
-    id: "jobTitle",
-  },
-  {
-    label: "Location",
-    id: "location",
-  },
-  {
-    label: "Date",
-    id: "date",
-  },
-  {
-    label: "",
-    id: "func",
-  },
-];
-
-export default class SearchPage extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      searchText: "",
-      rows: [
-        // {
-        //   benefits: [
-        //     "A stipend of $8,000 for ten weeks is available for up to two summer legal interns, but candidates are required to document attempts to secure funding through their law schools or external sources",
-        //     "Any final stipend amount will be offset by amounts received through these external funding sources",
-        //   ],
-        //   companyName: "ACLU - Internships",
-        //   date: "3 days ago",
-        //   jobTitle: "Legal Internship Program",
-        //   location: "  Raleigh, NC   ",
-        //   qualifications: [
-        //     "Completed first year of law school before the internship commences",
-        //     "Ability to conduct thorough legal and factual research in a fast-paced litigation environment on short deadline, identify relevant authorities, and succinctly summarize findings",
-        //     "Clear, direct writing and oral communication style, and ability to explain complex legal concepts in plain language",
-        //     "Ability to take direction well and work collaboratively as part of a multidisciplinary team of other law students, supervising attorneys, and non-attorney staff members",
-        //     "Deep respect for others' lived experiences, humility, and ability to work with, learn from, and interact respectfully with people from backgrounds different from your own",
-        //     "Commitment to civil rights and civil liberties issues and the mission of the ACLU, especially if coupled with a desire to work in the public interest after law school",
-        //   ],
-        //   responsibilities: [
-        //     "The internship is full-time and requires a 10-week commitment",
-        //     "Conducting legal and policy research on a range of topics",
-        //   ],
-        // },
-      ],
-      salary: "",
-      addedList: [],
-      showJobDesc: false,
-      selectedJob: null,
-      searching: false,
+class SearchPage extends Component {
+    state = {
+        searchText: '',
+        insights: null,
+        loading: false,
+        error: null,
+        resumeContent: null,
+        comparison: null,
+        pastAnalyses: [],
+        selectedAnalysis: null
     };
-  }
 
-  search() {
-    if (!this.state.searchText) {
-      window.alert("Search bar cannot be empty!!");
-      return;
-    }
-    this.setState({ searching: true });
-    $.ajax({
-      url: "http://127.0.0.1:5000/search",
-      method: "get",
-      data: {
-        keywords: this.state.searchText,
-        salary: this.state.salary,
-      },
-      contentType: "application/json",
-      success: (data) => {
-        const res = data.map((d, i) => {
-          return {
-            id: i,
-            jobTitle: d.jobTitle,
-            companyName: d.companyName,
-            location: d.location,
-            date: d.date,
-            qualifications: d.qualifications,
-            benefits: d.benefits,
-            responsibilities: d.responsibilities,
-          };
-        });
-        this.setState({
-          searching: false,
-          rows: res,
-        });
-      },
-      error: () => {
-        window.alert("Error while fetching jobs. Please try again later");
-        this.setState({
-          searching: false,
-        });
-      },
-    });
-  }
-
-  deleteTheApplication(id) {
-    const newRows = this.state.rows.filter((app) => {
-      return app.id !== id;
-    });
-    const newAddedList = this.state.addedList.filter((app) => {
-      return app.id !== id;
-    });
-    this.setState({
-      rows: newRows,
-      addedList: newAddedList,
-    });
-  }
-
-  // open the card modal according to the application in parameter
-  showEditModal(job, mode) {
-    // console.log(job)
-    this.setState({
-      showModal: true,
-      job: job,
-      modalMode: mode,
-    });
-  }
-
-  handleCloseEditModal() {
-    this.setState({
-      showModal: false,
-      job: null,
-    });
-  }
-
-  addToWaitlist(job) {
-    const newAddedList = this.state.addedList;
-    newAddedList.push(job.id);
-    // console.log(job)
-
-    $.ajax({
-      url: "http://127.0.0.1:5000/applications",
-      method: "POST",
-      data: JSON.stringify({
-        application: job,
-      }),
-      headers: {
-        Authorization: "Bearer " + localStorage.getItem("token"),
-        "Access-Control-Allow-Origin": "http://127.0.0.1:3000",
-        "Access-Control-Allow-Credentials": "true",
-      },
-      contentType: "application/json",
-      success: (msg) => {
-        console.log(msg);
-        alert("Added item!");
-      },
-    });
-    this.setState({
-      addedList: newAddedList,
-    });
-  }
-
-  removeFromWaitlist(job) {
-    const newAddedList = this.state.addedList.filter((v) => {
-      return v !== job.id;
-    });
-    this.setState({
-      addedList: newAddedList,
-    });
-  }
-
-  handleChange(event) {
-    this.setState({ [event.target.id]: event.target.value });
-  }
-
-  setSalary(event) {
-    this.setState({ [event.target.id]: event.target.value });
-  }
-
-  handleShowJobDesc(job) {
-    this.setState({
-      showJobDesc: !this.state.showJobDesc,
-      selectedJob: job,
-    });
-  }
-
-  render() {
-    const rows = this.state.rows;
-
-    let applicationModal = null;
-    if (this.state.job) {
-      applicationModal = (
-        <SearchCard
-          show={this.state.showModal}
-          submitFunc={this.addToWaitlist.bind(this)}
-          mode={this.state.modalMode}
-          application={this.state.job}
-          handleCloseEditModal={this.handleCloseEditModal.bind(this)}
-          deleteApplication={this.deleteTheApplication.bind(this)}
-        />
-      );
+    componentDidMount() {
+        this.fetchAnalyses();
+        // Load past analyses from localStorage when component mounts
+        const savedAnalyses = localStorage.getItem('pastAnalyses');
+        if (savedAnalyses) {
+            this.setState({ pastAnalyses: JSON.parse(savedAnalyses) });
+        }
     }
 
-    return (
-      <div>
-        <div className="d-flex justify-content-center my-5">
-          <input
-            type="text"
-            id="searchText"
-            className="form-control px-4 py-3 w-50"
-            placeholder="Keyword"
-            aria-label="Username"
-            aria-describedby="basic-addon1"
-            value={this.state.searchText}
-            onChange={this.handleChange.bind(this)}
-            style={{ fontSize: 18, marginRight: 20 }}
-          />
-          <button
-            type="button"
-            className="px-4 py-3 custom-btn"
-            onClick={this.search.bind(this)}
-            disabled={this.state.searching}
-          >
-            Search
-          </button>
-        </div>
-        {!this.state.searching && this.state.rows.length ? (
-          <table
-            className="table my-4"
-            style={{
-              boxShadow: "0px 5px 12px 0px rgba(0,0,0,0.1)",
-              marginTop: 30,
-              marginLeft: "10%",
-              width: "95%",
-              paddingRight: 10,
-            }}
-          >
-            <thead>
-              <tr>
-                {columns.map((column) => {
-                  return (
-                    <th
-                      className="p-3"
-                      key={column.id + "_th"}
-                      style={{
-                        fontSize: 18,
-                        fontWeight: "500",
-                        backgroundColor: "#2a6e85",
-                        color: "#fff",
-                      }}
-                    >
-                      {column.label}
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                return (
-                  <tr key={row.id}>
-                    {columns.map((column) => {
-                      const value = row[column.id];
-                      if (column.id !== "func") {
-                        return (
-                          <td className="p-3" key={column.id}>
-                            {value}
-                          </td>
-                        );
-                      } else {
-                        <button
-                          type="button"
-                          className="add-btn px-3 py-2"
-                          // onClick={this.showEditModal.bind(this, row)}
-                          onClick={this.handleShowJobDesc.bind(this, row)}
-                          // style={{
-                          //   backgroundColor: "#296E85",
-                          //   border: "none",
-                          // }}
-                        >
-                          Details
-                        </button>;
-                        const addButton = this.state.addedList.includes(
-                          row.id
-                        ) ? (
-                          <button
-                            type="button"
-                            className="btn btn-outline-secondary"
-                            onClick={this.removeFromWaitlist.bind(this, row)}
-                          >
-                            Added
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="add-btn px-3 py-2"
-                            // onClick={this.showEditModal.bind(this, row)}
-                            onClick={this.handleShowJobDesc.bind(this, row)}
-                            // style={{
-                            //   backgroundColor: "#296E85",
-                            //   border: "none",
-                            // }}
-                          >
-                            Details
-                          </button>
-                        );
-                        return (
-                          <td key={row.id + "_func"} className="p-2">
-                            {/* <div className="container"> */}
-                            <div className="d-flex justify-content-evenly">
-                              {addButton}
-                              {/* <button
-                                type="button"
-                                // style={{
-                                //   backgroundColor: "#e54b4b",
-                                //   border: "none",
-                                //   color: "#fff",
-                                //   borderRad
-                                // }}
-                                className="delete-btn px-3 py-2"
-                                onClick={this.deleteTheApplication.bind(
-                                  this,
-                                  row.id
-                                )}
-                                style={{
-                                  marginLeft:'2px'
-                                }}
-                              >
-                                {" "}
-                                Delete{" "}
-                              </button> */}
+    fetchResume = async () => {
+        try {
+            const response = await $.ajax({
+                url: 'http://127.0.0.1:5000/resume',
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                    'Access-Control-Allow-Origin': 'http://127.0.0.1:3000',
+                    'Access-Control-Allow-Credentials': 'true'
+                },
+                xhrFields: {
+                    responseType: 'blob'
+                }
+            });
+
+            const formData = new FormData();
+            formData.append('resume', response);
+
+            const parseResponse = await axios.post('http://127.0.0.1:5000/parse-resume', formData, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            return parseResponse.data;
+        } catch (error) {
+            console.error('Error fetching/parsing resume:', error);
+            return null;
+        }
+    };
+
+    handleSearch = async () => {
+        if (!this.state.searchText) return;
+        this.setState({ loading: true, error: null });
+
+        try {
+            const [resumeContent, insightsResponse] = await Promise.all([
+                this.fetchResume(),
+                axios.get('http://127.0.0.1:5000/search', {
+                    params: { keywords: this.state.searchText },
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                })
+            ]);
+
+            if (resumeContent && insightsResponse.data) {
+                const comparisonResponse = await axios.post('http://127.0.0.1:5000/compare-resume', {
+                    resume: resumeContent,
+                    jobInsights: insightsResponse.data
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const newAnalysis = {
+                    id: Date.now(),
+                    searchTerm: this.state.searchText,
+                    date: new Date().toLocaleString(),
+                    comparison: comparisonResponse.data,
+                    insights: insightsResponse.data
+                };
+
+                // Save analysis to backend
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/analyses', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': 'http://127.0.0.1:3000',
+                            'Access-Control-Allow-Credentials': 'true'
+                        },
+                        body: JSON.stringify(newAnalysis)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to save analysis');
+                    }
+
+                    // Fetch updated analyses list
+                    this.fetchAnalyses();
+                } catch (error) {
+                    console.error('Error saving analysis:', error);
+                }
+
+                const updatedAnalyses = [...this.state.pastAnalyses, newAnalysis];
+                localStorage.setItem('pastAnalyses', JSON.stringify(updatedAnalyses));
+                this.setState({
+                    insights: insightsResponse.data,
+                    resumeContent,
+                    comparison: comparisonResponse.data,
+                    loading: false,
+                    selectedAnalysis: null,
+                    pastAnalyses: updatedAnalyses
+                });
+            } else {
+                this.setState({
+                    insights: insightsResponse.data,
+                    loading: false,
+                    error: resumeContent ? null : 'No resume found. Please upload a resume first.'
+                });
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+            this.setState({
+                error: 'Failed to fetch insights. Please try again.',
+                loading: false
+            });
+        }
+    };
+
+    handleAnalysisSelect = (analysis) => {
+        this.setState({
+            selectedAnalysis: analysis,
+            insights: analysis.insights,
+            comparison: analysis.comparison
+        });
+    };
+
+    fetchAnalyses = async () => {
+        try {
+            const response = await fetch('http://127.0.0.1:5000/analyses', {
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                    'Access-Control-Allow-Origin': 'http://127.0.0.1:3000',
+                    'Access-Control-Allow-Credentials': 'true'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch analyses');
+            }
+
+            const data = await response.json();
+            this.setState({ pastAnalyses: data });
+        } catch (error) {
+            console.error('Error fetching analyses:', error);
+        }
+    };
+
+    renderComparison() {
+        const { comparison } = this.state;
+        if (!comparison) return null;
+
+        return (
+            <div style={{ 
+                display: 'flex',
+                justifyContent: 'center',
+                width: '100%'
+            }}>
+                <div className="card my-4" style={{ maxWidth: '800px', width: '100%' }}>
+                    <div className="card-body">
+                        <h4 className="text-primary">Resume Match Analysis</h4>
+                        <div className="mb-4">
+                            <h5>Overall Match: {comparison.overallMatch}%</h5>
+                            <div className="progress mb-3">
+                                <div 
+                                    className="progress-bar" 
+                                    role="progressbar" 
+                                    style={{ width: `${comparison.overallMatch}%` }}
+                                    aria-valuenow={comparison.overallMatch} 
+                                    aria-valuemin="0" 
+                                    aria-valuemax="100"
+                                />
                             </div>
-                            {/* <div className="row">
-                                <div className="col-md-4">{addButton}</div>
-                                &nbsp;&nbsp;
-                                <div className="col-md-2">
-                                  <button
-                                    type="button"
-                                    style={{
-                                      backgroundColor: "#e54b4b",
-                                      border: "none",
-                                    }}
-                                    className="btn btn-secondary"
-                                    onClick={this.deleteTheApplication.bind(
-                                      this,
-                                      row.id
-                                    )}
-                                  >
-                                    {" "}
-                                    Delete{" "}
-                                  </button>
+                        </div>
+
+                        <div className="row">
+                            <div className="col-md-6">
+                                <h5>Matching Skills</h5>
+                                <ul className="list-group">
+                                    {comparison.matchingSkills.map((skill, index) => (
+                                        <li key={index} className="list-group-item text-success">
+                                            <i className="fas fa-check-circle me-2"></i>{skill}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <div className="col-md-6">
+                                <h5>Missing Skills</h5>
+                                <ul className="list-group">
+                                    {comparison.missingSkills.map((skill, index) => (
+                                        <li key={index} className="list-group-item text-danger">
+                                            <i className="fas fa-times-circle me-2"></i>{skill}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div className="mt-4">
+                            <h5>Recommendations</h5>
+                            <ul className="list-group">
+                                {comparison.recommendations.map((rec, index) => (
+                                    <li key={index} className="list-group-item">
+                                        <i className="fas fa-lightbulb me-2"></i>{rec}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    renderInsights() {
+        const { insights } = this.state;
+        if (!insights) return null;
+
+        return (
+            <div style={{ 
+                display: 'flex',
+                justifyContent: 'center',
+                width: '100%'
+            }}>
+                <div className="card my-4" style={{ maxWidth: '800px', width: '100%' }}>
+                    <div className="card-body">
+                        <h4 className="text-primary">Job Role Insights</h4>
+                        
+                        <div className="mb-4">
+                            <h5>Role Overview</h5>
+                            <p>{insights.roleOverview}</p>
+                        </div>
+
+                        <div className="mb-4">
+                            <h5>Technical Skills</h5>
+                            {insights.technicalSkills.map((skillCategory, index) => (
+                                <div key={index} className="mb-3">
+                                    <h6>{skillCategory.category}</h6>
+                                    <ul className="list-inline">
+                                        {skillCategory.tools.map((tool, i) => (
+                                            <li key={i} className="list-inline-item">
+                                                <span className="badge bg-secondary me-2">{tool}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
-                              </div> */}
-                            {/* </div> */}
-                          </td>
-                        );
-                      }
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        ) : null}
-        {this.state.searching && (
-          <div className="d-flex justify-content-center my-5">
-            <Spinner animation="border" style={{ fontSize: 15 }} />
-          </div>
-        )}
-        {this.state.showJobDesc && (
-          <JobDescription
-            selectedJob={this.state.selectedJob}
-            setState={this.handleShowJobDesc.bind(this)}
-          />
-        )}
-        {applicationModal}
-      </div>
-    );
-  }
+                            ))}
+                        </div>
+
+                        <div className="mb-4">
+                            <h5>Soft Skills</h5>
+                            <ul className="list-inline">
+                                {insights.softSkills.map((skill, index) => (
+                                    <li key={index} className="list-inline-item">
+                                        <span className="badge bg-info me-2">{skill}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="mb-4">
+                            <h5>Recommended Certifications</h5>
+                            <div className="row">
+                                {insights.certifications.map((cert, index) => (
+                                    <div key={index} className="col-md-6 mb-3">
+                                        <div className="card h-100">
+                                            <div className="card-body">
+                                                <h6>{cert.name}</h6>
+                                                <p className="small text-muted">
+                                                    Provider: {cert.provider}<br/>
+                                                    Level: {cert.level}
+                                                </p>
+                                                <p className="small">{cert.description}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="mb-4">
+                            <h5>Salary Ranges</h5>
+                            <ul className="list-group">
+                                <li className="list-group-item">Entry Level: {insights.salaryRange.entry}</li>
+                                <li className="list-group-item">Mid Level: {insights.salaryRange.mid}</li>
+                                <li className="list-group-item">Senior Level: {insights.salaryRange.senior}</li>
+                            </ul>
+                        </div>
+
+                        <div className="mb-4">
+                            <h5>Industry Trends</h5>
+                            <ul className="list-group">
+                                {insights.industryTrends.map((trend, index) => (
+                                    <li key={index} className="list-group-item">{trend}</li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h5>Learning Resources</h5>
+                            <div className="row">
+                                {insights.learningResources.map((resource, index) => (
+                                    <div key={index} className="col-md-6 mb-3">
+                                        <div className="card h-100">
+                                            <div className="card-body">
+                                                <h6>{resource.name}</h6>
+                                                <p className="small text-muted">
+                                                    Type: {resource.type}<br/>
+                                                    Cost: {resource.cost}<br/>
+                                                    Duration: {resource.duration}
+                                                </p>
+                                                <p className="small">{resource.description}</p>
+                                                <a href={resource.url} target="_blank" rel="noopener noreferrer" 
+                                                   className="btn btn-sm btn-primary">
+                                                    Learn More
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    render() {
+        return (
+            <div className="d-flex">
+                {/* Main Content */}
+                <div style={{ 
+                    marginLeft: '68px',
+                    flex: '1',
+                    padding: '20px',
+                    position: 'relative',
+                    zIndex: 0,
+                    maxWidth: 'calc(100vw - 88px)'
+                }}>
+                    <div style={{ 
+                        display: 'flex',
+                        justifyContent: 'center',
+                        width: '100%',
+                        marginBottom: '20px'
+                    }}>
+                        <div className="input-group" style={{ maxWidth: '800px' }}>
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Enter job title or role..."
+                                value={this.state.searchText}
+                                onChange={(e) => this.setState({ searchText: e.target.value })}
+                            />
+                            <button
+                                className="btn btn-primary"
+                                onClick={this.handleSearch}
+                                disabled={this.state.loading}
+                            >
+                                {this.state.loading ? (
+                                    <span>
+                                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        Analyzing...
+                                    </span>
+                                ) : 'Search'}
+                            </button>
+                        </div>
+                    </div>
+
+                    {this.state.error && (
+                        <div style={{ 
+                            display: 'flex',
+                            justifyContent: 'center',
+                            width: '100%'
+                        }}>
+                            <div className="alert alert-danger" style={{ maxWidth: '800px', width: '100%' }}>
+                                {this.state.error}
+                            </div>
+                        </div>
+                    )}
+
+                    {this.state.selectedAnalysis && (
+                        <div style={{ 
+                            display: 'flex',
+                            justifyContent: 'center',
+                            width: '100%'
+                        }}>
+                            <div className="alert alert-info d-flex justify-content-between align-items-center" 
+                                 style={{ maxWidth: '800px', width: '100%' }}>
+                                <span>
+                                    Viewing analysis for "{this.state.selectedAnalysis.searchTerm}" from {this.state.selectedAnalysis.date}
+                                </span>
+                                <button 
+                                    className="btn btn-sm btn-outline-info"
+                                    onClick={() => this.setState({ selectedAnalysis: null })}
+                                >
+                                    Return to Current Search
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {this.renderComparison()}
+                    {this.renderInsights()}
+
+                    {/* Past Analyses Section as List */}
+                    <div className="mt-4">
+                        <h4 className="mb-3 text-center">Past Analyses</h4>
+                        <div style={{ 
+                            display: 'flex',
+                            justifyContent: 'center',
+                            width: '100%'
+                        }}>
+                            <div className="list-group" style={{ maxWidth: '800px', width: '100%' }}>
+                                {this.state.pastAnalyses.map(analysis => (
+                                    <button
+                                        key={analysis.id}
+                                        className={`list-group-item list-group-item-action ${
+                                            this.state.selectedAnalysis?.id === analysis.id ? 'active' : ''
+                                        }`}
+                                        onClick={() => this.handleAnalysisSelect(analysis)}
+                                    >
+                                        <div className="d-flex w-100 justify-content-between">
+                                            <h5 className="mb-1">{analysis.searchTerm}</h5>
+                                            <small>{analysis.date}</small>
+                                        </div>
+                                        <p className="mb-1">Match: {analysis.comparison.overallMatch}%</p>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 }
+
+export default SearchPage;
