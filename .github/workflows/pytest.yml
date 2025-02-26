@@ -3,7 +3,7 @@ name: Run Pytest on Push
 on:
   push:
     branches:
-      - akulka24
+      - main
   pull_request:
     branches:
       - main
