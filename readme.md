@@ -14,8 +14,6 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/graphs/commit-activity)
 
 [![Collaborators](https://img.shields.io/badge/Collaborators-3-orange.svg?style=flat)](https://github.com/ncsu-csc-510/Project2/graphs/contributors)
-
-[![GitHub issues](https://img.shields.io/github/issues/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/issues)
 [![codecov](https://codecov.io/gh/ncsu-csc-510/Project2/graph/badge.svg?token=5Q5FTFG82W)](https://codecov.io/gh/ncsu-csc-510/Project2)
 
 [![Documentation Badge](https://img.shields.io/badge/API_Documentation-pdoc-blue.svg)](https://lemon-desert-093c6c80f.2.azurestaticapps.net/)
