@@ -1,28 +1,29 @@
 ## IMPROVEMENTS
 
-When our team took over the project from the previous group, we thoroughly reviewed the project in order to establish an effective takeover strategy. We attempted to improve the project in as many ways as possible. We've detailed the enhancements we've made in this document.
+## 1. Intelligent Application Strategy & Auto-Tracking  
+- Implement a **smart application strategy tool** that suggests the **best jobs to apply for** based on **user profile strength and historical success rates**.  
+- Enable **auto-tracking of job applications** via **email parsing** or **LinkedIn integration** to reduce manual entry.  
 
-* Easier setup instructions and Installation process:
-The previous instructions were cumbersome and unnecessarily manual. In Phase 2, we have provided shell scripts that automate the installation and setup of all required packages. We also included startup and shutdown scripts, preventing the need for multiple terminals as the previous instructions suggested.
+## 2. Personalized Career Roadmap & Growth Insights  
+- Develop an **AI-driven career roadmap generator** that suggests **skill-building pathways, certifications, and courses** based on a user’s career trajectory.  
+- Introduce **job trend insights**, providing **real-time market demand** for specific roles, technologies, and industries.  
 
-* Restructuring the Flask application:
-The previous structure of the Flask application from phase 1 was not compatible for the testing. In this Phase 2, we have restructured the Flask application file app.py and have written tests on the API endpoints.
+## 3. Smart Interview Preparation Suite  
+- Create an **AI-powered interview coach** that generates **personalized practice questions** based on the job role and user profile.  
+- Integrate a **mock interview simulation** with feedback on **answer structuring, confidence, and clarity**.  
 
-* Writing unit tests:
-In Phase 1, there were no unit tests written for the application. In Phase 2, we have written unit tests using pytest and pytest-mock. More information on the test cases can be found in the Software documentation file. 
+## 4. Collaborative Job Search & Referral Network  
+- Enable a **referral exchange system** where users can **connect with peers, alumni, or professionals** willing to refer them for jobs.  
+- Allow **collaborative job searching**, where users can **share job listings, interview tips, and insights** within a trusted network.  
 
-* Introducing Database:
-Previously, the company data was stored in a CSV file. We have constructed a database to store all the information of the companies. We have used MongoDB to create the database.
+## 5. AI-Driven Cover Letter Generator  
+- Implement an **AI tool** that **auto-generates personalized cover letters** tailored to the job role and user experience.  
+- Allow users to **fine-tune tone, length, and key talking points** before submission.  
 
-* Removing unused codes and updating Gitignore:
-We have removed some of the project's local environment related files which should not be present in the repository. For example: pycache folder. Previously, the gitignore files were not capable of ignoring e.g. the pycache folder. So, we have also updated the gitignore file so that no unnecessary files get pushed in future commits.
+## 6. Advanced Dashboard & Visual Analytics  
+- Introduce a **dashboard with data visualizations** showcasing **application trends, job market insights, and career progress**.  
+- Provide **customizable job alerts and notifications** based on job preferences and market trends.  
 
-* CI/CD Pipeline for Frontend app:
-We have created a CI/CD pipeline for the react(frontend) application using Github Actions. The React application has been deployed to Github pages. The application can be accessed using the following link https://team-glare.github.io/application-tracking-system/ 
-Since the flask(backend) application has not been deployed, the react application is not fully functional.  
-
-* Adding Linters, Code formatters:
-We have added super-linter to our CI pipeline using Github Actions.
-
-* Adding Software documentation:
-We have added elaborate software documentation mentioning all the endpoint details.
+## 7. View Profile Picture  
+- The user is currently able to **upload a profile photo**, but it is **not viewable**.  
+- (Code for **profile photo update** is present but **commented out**).
