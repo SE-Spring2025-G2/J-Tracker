@@ -43,18 +43,16 @@ jobs:
 
     - name: Upload Test 1 Results
       if: always()  # This ensures the step runs even if tests fail
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: test1-results
-        path: |
-          test1-report.xml
+        path: test1-report.xml
         retention-days: 30
 
     - name: Upload Test 2 Results
       if: always()  # This ensures the step runs even if tests fail
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: test2-results
-        path: |
-          test2-report.xml
+        path: test2-report.xml
         retention-days: 30
