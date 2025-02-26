@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 import pandas as pd
 
-
+import certifi
 import yaml
 
 
@@ -772,9 +772,11 @@ MONGO_PASSWORD = info.get("PASSWORD", "default_pass")
 MONGO_CLUSTER = info.get("CLUSTER_URL", "cluster0.jmi6a.mongodb.net")
 
 app.config["MONGODB_SETTINGS"] = {
-    "db": "appTracker",
-    "host": f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_CLUSTER}/appTracker?retryWrites=true&w=majority",
+    "db": "Cluster0",
+    "host": "mongodb+srv://akakadi:PHzJPFrq3t9bNuVN@cluster0.brnbh.mongodb.net/",
+    "tlsCAFile": certifi.where(),
 }
+# app.config["tlsAllowInvalidCertificates"]=True
 
 
 db = MongoEngine()
