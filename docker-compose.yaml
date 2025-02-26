@@ -4,15 +4,22 @@ services:
             context: .
             dockerfile: dockerfile.api
         image: ats-api
+        volumes:
+            - ./backend:/app
         ports:
-            - '5000:5000'
+            - '5001:5000'
         networks:
             - ats-network
+        environment:
+            FLASK_ENV: development
+        command: flask run --host=0.0.0.0 
     client:
         build:
             context: .
             dockerfile: dockerfile.client
         image: ats-client
+        volumes:
+            - ./frontend:/app
         ports:
             - '3000:3000'
         networks:
