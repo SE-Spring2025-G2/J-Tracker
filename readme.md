@@ -7,6 +7,13 @@
 [![Github closes issues](https://img.shields.io/github/issues-closed-raw/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/issues?q=is%3Aissue+is%3Aclosed)
 ![GitHub top language](https://img.shields.io/github/languages/top/ncsu-csc-510/Project2)
 ![Test Status](https://github.com/ncsu-csc-510/Project2/workflows/Test/badge.svg)
+[![GitHub Tag](https://img.shields.io/github/v/tag/ncsu-csc-510/Project2?style=plastic)](https://github.com/ncsu-csc-510/Project2/releases)
+[![GitHub forks](https://img.shields.io/github/forks/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/network)
+[![GitHub stars](https://img.shields.io/github/stars/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/stargazers)
+[![GitHub contributors](https://img.shields.io/github/contributors/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/graphs/contributors)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/graphs/commit-activity)
+
+[![Collaborators](https://img.shields.io/badge/Collaborators-3-orange.svg?style=flat)](https://github.com/ncsu-csc-510/Project2/graphs/contributors)
 
 <p align="center"><img width="700" src="./resources/ApplicationTrackingAnimation.gif"></p>
 
