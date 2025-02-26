@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 
 from fake_useragent import UserAgent
 import pandas as pd
-
+from jobsearch import get_ai_job_recommendations
 
 import yaml
 
@@ -315,59 +315,30 @@ def create_app():
     @app.route("/getRecommendations", methods=["GET"])
     def getRecommendations():
         """
-        Update the user profile with preferences: skills, job-level and location
+        Get AI-powered job recommendations based on user's profile
         """
         try:
             userid = get_userid_from_header()
             user = Users.objects(id=userid).first()
-            print(user["skills"])
-            skill_sets = [x["value"] for x in user["skills"]]
-            job_levels_sets = [x["value"] for x in user["job_levels"]]
-            locations_set = [x["value"] for x in user["locations"]]
-            recommendedJobs = []
-            headers = {"User-Agent":
-                       #    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"
-                       user_agent.random,
-                       "Referrer": "https://www.google.com/"
-                       }
-            if len(skill_sets) > 0 or len(job_levels_sets) > 0 or len(locations_set) > 0:
-                random_skill = random.choice(skill_sets)
-                random_job_level = random.choice(job_levels_sets)
-                random_location = random.choice(locations_set)
-                query = "https://www.google.com/search?q=" + random_skill + \
-                    random_job_level + random_location + "&ibp=htl;jobs"
-                print(query)
+            
+            # Get AI-powered recommendations
+            recommendedJobs = get_ai_job_recommendations(
+                user["skills"],
+                user["job_levels"],
+                user["locations"]
+            )
+            
+            if not recommendedJobs:
+                return jsonify({
+                    "message": "No matching jobs found. Please update your profile with skills and preferences."
+                }), 200
 
-                # inner_div = mydivs[0].find("div", class_="KGjGe")
-                # if inner_div:
-                #     data_share_url = inner_div.get("data-share-url")
-                #     print(data_share_url)
-
-            else:
-                query = "https://www.google.com/search?q=" + "sde usa" + "&ibp=htl;jobs"
-
-            page = requests.get(query, headers=headers)
-            soup = BeautifulSoup(page.text, "html.parser")
-            # KGjGe - div class to get url
-            mydivs = soup.find_all("div", class_="PwjeAc")
-            for div in mydivs:
-                job = {}
-                inner_div = div.find("div", class_="KGjGe")
-                if inner_div:
-                    job["data-share-url"] = inner_div.get("data-share-url")
-                job["jobTitle"] = div.find(
-                    "div", {"class": "BjJfJf PUpOsf"}).text
-                print(job["jobTitle"])
-                job["companyName"] = div.find("div", {"class": "vNEEBe"}).text
-                job["location"] = div.find("div", {"class": "Qk80Jf"}).text
-                recommendedJobs.append(job)
-            print(recommendedJobs)
-            return jsonify(recommendedJobs)
+            return jsonify(recommendedJobs), 200
 
         except Exception as err:
-            print(err)
+            print(f"Error in getRecommendations: {str(err)}")
             return jsonify({"error": "Internal server error"}), 500
-
+    
     # @app.route("/users/login", methods=["POST"])
     # def login():
     #     """
@@ -457,7 +428,10 @@ def create_app():
                     "email": user.email,
                     "phone_number": user.phone_number,
                     "address": user.address,
-                    "institution": user.institution
+                    "institution": user.institution,
+                    "skills": user.skills,
+                    "job_levels": user.job_levels,
+                    "locations": user.locations
                 }
             }), 200
         except Exception as e:
@@ -491,75 +465,239 @@ def create_app():
     # search function
     # params:
     #   -keywords: string
-    @app.route("/search")
+    @app.route("/search", methods=["GET"])
     def search():
-        """
-        Searches the web and returns the job postings for the given search filters
+        try:
+            job_title = request.args.get('keywords', '')
+            if not job_title:
+                return jsonify({"error": "Job title is required"}), 400
 
-        :return: JSON object with job results
-        """
-        keywords = (
-            request.args.get("keywords")
-            if request.args.get("keywords")
-            else "random_test_keyword"
-        )
-        salary = request.args.get(
-            "salary") if request.args.get("salary") else ""
-        keywords = keywords.replace(" ", "+")
-        if keywords == "random_test_keyword":
-            return json.dumps({"label": str("successful test search")})
-        # create a url for a crawler to fetch job information
-        if salary:
-            url = (
-                "https://www.google.com/search?q="
-                + keywords
-                + "%20salary%20"
-                + salary
-                + "&ibp=htl;jobs"
+            prompt = f"""
+            Create a comprehensive career guide for a {job_title} role. Be specific to this role and provide detailed, practical information.
+            
+            Return a JSON object with the following structure:
+            {{
+                "roleOverview": "Detailed description specific to {job_title}, including day-to-day responsibilities, career progression, and industry impact",
+                
+                "technicalSkills": [
+                    {{
+                        "category": "Core Skills for {job_title}",
+                        "tools": ["List specific tools and technologies required"]
+                    }},
+                    {{
+                        "category": "Additional Technical Skills",
+                        "tools": ["List complementary skills that would be valuable"]
+                    }},
+                    {{
+                        "category": "Emerging Technologies",
+                        "tools": ["List new technologies relevant to this role"]
+                    }}
+                ],
+                
+                "softSkills": [
+                    "List 5-7 soft skills specifically important for {job_title}, with brief explanations"
+                ],
+                
+                "certifications": [
+                    {{
+                        "name": "Certification name specific to {job_title}",
+                        "provider": "Certification provider",
+                        "level": "Difficulty level",
+                        "description": "Why this certification is valuable for {job_title}"
+                    }}
+                ],
+                
+                "projectIdeas": [
+                    {{
+                        "title": "Project name relevant to {job_title}",
+                        "description": "Detailed project description showing relevant skills",
+                        "technologies": ["Required technologies"],
+                        "learningOutcomes": ["What you'll learn from this project"]
+                    }}
+                ],
+                
+                "industryTrends": [
+                    "List 5 current trends specifically affecting {job_title} roles"
+                ],
+                
+                "salaryRange": {{
+                    "entry": "Entry-level salary range for {job_title}",
+                    "mid": "Mid-level salary range for {job_title}",
+                    "senior": "Senior-level salary range for {job_title}",
+                    "factors": ["List factors that affect salary in this role"]
+                }},
+                
+                "learningResources": [
+                    {{
+                        "name": "Resource name specific to {job_title}",
+                        "type": "Course/Book/Tutorial/Workshop",
+                        "cost": "Free/Paid with approximate cost",
+                        "url": "Resource URL",
+                        "duration": "Estimated time to complete",
+                        "description": "What you'll learn from this resource"
+                    }}
+                ],
+                
+                "prerequisites": {{
+                    "education": ["Required/recommended education"],
+                    "experience": ["Required/recommended experience"],
+                    "skills": ["Must-have skills before starting"]
+                }},
+                
+                "careerPath": {{
+                    "entryLevel": "Entry-level positions",
+                    "midLevel": "Mid-level positions",
+                    "senior": "Senior-level positions",
+                    "advancement": ["Possible career advancement paths"]
+                }}
+            }}
+            
+            Ensure all information is:
+            1. Specific to the {job_title} role
+            2. Current and industry-relevant
+            3. Detailed and actionable
+            4. Realistic and practical
+            """
+
+        # Rest of the code remains the same...
+
+            headers = {
+                "Authorization": "Bearer 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",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": "gpt-3.5-turbo",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are a career advisor. Return only JSON without any markdown formatting."
+                    },
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": 0.7,
+                "response_format": { "type": "json_object" }
+            }
+
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json=data
             )
-        else:
-            url = "https://www.google.com/search?q=" + keywords + "&ibp=htl;jobs"
 
-        print(user_agent.random)
-        headers = {"User-Agent":
-                   #    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"
-                   user_agent.random,
-                   "Referrer": "https://www.google.com/"
-                   }
+            if response.status_code == 200:
+                result = response.json()
+                content = result['choices'][0]['message']['content']
+                
+                # Clean the content string
+                content = content.strip()
+                if content.startswith('```json'):
+                    content = content[7:]
+                if content.startswith('```'):
+                    content = content[3:]
+                if content.endswith('```'):
+                    content = content[:-3]
+                
+                # Parse the JSON content
+                insights = json.loads(content.strip())
+                
+                # Return the parsed JSON directly
+                return jsonify(insights), 200
+            else:
+                return jsonify({"error": "Failed to get insights"}), 500
 
-        page = requests.get(url, headers=headers)
-        soup = BeautifulSoup(page.text, "html.parser")
+        except Exception as e:
+            print(f"Error in search: {str(e)}")
+            return jsonify({"error": "Internal server error"}), 500
+            
+    @app.route("/search", methods=["GET"])
+    def search_jobs():
+        try:
+            job_title = request.args.get('keywords', '')
+            if not job_title:
+                return jsonify({"error": "Job title is required"}), 400
 
-        # parsing searching results to DataFrame and return
-        df = pd.DataFrame(
-            columns=["jobTitle", "companyName", "location", "date", "qualifications", "responsibilities", "benefits"])
-        mydivs = soup.find_all("div", class_="PwjeAc")
+            # Create detailed prompt for job insights
+            prompt = f"""
+                Provide comprehensive insights for the role: {job_title}
 
-        for i, div in enumerate(mydivs):
-            df.at[i, "jobTitle"] = div.find(
-                "div", {"class": "BjJfJf PUpOsf"}).text
-            df.at[i, "companyName"] = div.find("div", {"class": "vNEEBe"}).text
-            df.at[i, "location"] = div.find("div", {"class": "Qk80Jf"}).text
-            df.at[i, "date"] = div.find_all(
-                "span", {"class": "LL4CDc"}, limit=1)[0].text
+                Return a JSON object with this exact structure:
+                {{
+                    "roleOverview": "string describing the role",
+                    "technicalSkills": [
+                        {{
+                            "category": "category name",
+                            "tools": ["tool1", "tool2"]
+                        }}
+                    ],
+                    "softSkills": ["skill1", "skill2"],
+                    "certifications": [
+                        {{
+                            "name": "cert name",
+                            "provider": "provider name",
+                            "level": "difficulty level"
+                        }}
+                    ],
+                    "projectIdeas": [
+                        {{
+                            "title": "project name",
+                            "description": "project description",
+                            "technologies": ["tech1", "tech2"]
+                        }}
+                    ],
+                    "industryTrends": ["trend1", "trend2"],
+                    "salaryRange": {{
+                        "entry": "entry level range",
+                        "mid": "mid level range",
+                        "senior": "senior level range"
+                    }},
+                    "learningResources": [
+                        {{
+                            "name": "resource name",
+                            "type": "resource type",
+                            "cost": "free/paid",
+                            "url": "resource url"
+                        }}
+                    ]
+                }}
+                """
 
-            # Collect Job Description Details
-            desc = div.find_all("div", {"class": "JxVj3d"})
-            for ele in desc:
-                arr = list(x.text for x in ele.find_all(
-                    "div", {"class": "nDgy9d"}))
-                title = ele.find("div", {"class": "iflMsb"}).text
-                if arr:
-                    df.at[i, str(title).lower()] = arr
-        missingCols = list(
-            (df.loc[:, df.isnull().sum(axis=0).astype(bool)]).columns)
+            # OpenAI API call
+            headers = {
+                "Authorization": "Bearer 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",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": "gpt-3.5-turbo",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are a career advisor and industry expert providing detailed insights about tech roles."
+                    },
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": 0.7,
+                "response_format": { "type": "json_object" }
+            }
 
-        for col in missingCols:
-            df.loc[df[col].isnull(), [col]] = df.loc[df[col].isnull(
-            ), col].apply(lambda x: [])
-        # df.loc[df["benefits"].isnull(), ["benefits"]] = df.loc[df["benefits"].isnull(), "benefits"].apply(lambda x: [])
-        return jsonify(df.to_dict("records"))
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json=data
+            )
 
+            if response.status_code == 200:
+                result = response.json()
+                insights = json.loads(result['choices'][0]['message']['content'])
+                return jsonify(insights), 200
+            else:
+                return jsonify({"error": "Failed to get insights"}), 500
+
+        except Exception as e:
+            print(f"Error in search: {str(e)}")
+            return jsonify({"error": "Internal server error"}), 500
+    
     # get data from the CSV file for rendering root page
     @app.route("/applications", methods=["GET"])
     def get_data():

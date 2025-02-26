@@ -1,382 +1,301 @@
-import React, { Component } from "react";
-import $ from "jquery";
-import SearchCard from "./SearchCard";
-import JobDescription from "../Modals/JobDescription";
-import { Spinner } from "react-bootstrap";
+import React, { Component } from 'react';
+import axios from 'axios';
 
-const columns = [
-  {
-    label: "Company Name",
-    id: "companyName",
-  },
-  {
-    label: "Job Title",
-    id: "jobTitle",
-  },
-  {
-    label: "Location",
-    id: "location",
-  },
-  {
-    label: "Date",
-    id: "date",
-  },
-  {
-    label: "",
-    id: "func",
-  },
-];
-
-export default class SearchPage extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      searchText: "",
-      rows: [
-        // {
-        //   benefits: [
-        //     "A stipend of $8,000 for ten weeks is available for up to two summer legal interns, but candidates are required to document attempts to secure funding through their law schools or external sources",
-        //     "Any final stipend amount will be offset by amounts received through these external funding sources",
-        //   ],
-        //   companyName: "ACLU - Internships",
-        //   date: "3 days ago",
-        //   jobTitle: "Legal Internship Program",
-        //   location: "  Raleigh, NC   ",
-        //   qualifications: [
-        //     "Completed first year of law school before the internship commences",
-        //     "Ability to conduct thorough legal and factual research in a fast-paced litigation environment on short deadline, identify relevant authorities, and succinctly summarize findings",
-        //     "Clear, direct writing and oral communication style, and ability to explain complex legal concepts in plain language",
-        //     "Ability to take direction well and work collaboratively as part of a multidisciplinary team of other law students, supervising attorneys, and non-attorney staff members",
-        //     "Deep respect for others' lived experiences, humility, and ability to work with, learn from, and interact respectfully with people from backgrounds different from your own",
-        //     "Commitment to civil rights and civil liberties issues and the mission of the ACLU, especially if coupled with a desire to work in the public interest after law school",
-        //   ],
-        //   responsibilities: [
-        //     "The internship is full-time and requires a 10-week commitment",
-        //     "Conducting legal and policy research on a range of topics",
-        //   ],
-        // },
-      ],
-      salary: "",
-      addedList: [],
-      showJobDesc: false,
-      selectedJob: null,
-      searching: false,
+class SearchPage extends Component {
+    state = {
+        searchText: '',
+        insights: null,
+        loading: false,
+        error: null
     };
-  }
 
-  search() {
-    if (!this.state.searchText) {
-      window.alert("Search bar cannot be empty!!");
-      return;
-    }
-    this.setState({ searching: true });
-    $.ajax({
-      url: "http://127.0.0.1:5000/search",
-      method: "get",
-      data: {
-        keywords: this.state.searchText,
-        salary: this.state.salary,
-      },
-      contentType: "application/json",
-      success: (data) => {
-        const res = data.map((d, i) => {
-          return {
-            id: i,
-            jobTitle: d.jobTitle,
-            companyName: d.companyName,
-            location: d.location,
-            date: d.date,
-            qualifications: d.qualifications,
-            benefits: d.benefits,
-            responsibilities: d.responsibilities,
-          };
-        });
-        this.setState({
-          searching: false,
-          rows: res,
-        });
-      },
-      error: () => {
-        window.alert("Error while fetching jobs. Please try again later");
-        this.setState({
-          searching: false,
-        });
-      },
-    });
-  }
+    handleSearch = async () => {
+        if (!this.state.searchText) return;
 
-  deleteTheApplication(id) {
-    const newRows = this.state.rows.filter((app) => {
-      return app.id !== id;
-    });
-    const newAddedList = this.state.addedList.filter((app) => {
-      return app.id !== id;
-    });
-    this.setState({
-      rows: newRows,
-      addedList: newAddedList,
-    });
-  }
+        this.setState({ loading: true, error: null });
 
-  // open the card modal according to the application in parameter
-  showEditModal(job, mode) {
-    // console.log(job)
-    this.setState({
-      showModal: true,
-      job: job,
-      modalMode: mode,
-    });
-  }
+        try {
+            const response = await axios.get('http://127.0.0.1:5000/search', {
+                params: { keywords: this.state.searchText },
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
 
-  handleCloseEditModal() {
-    this.setState({
-      showModal: false,
-      job: null,
-    });
-  }
+            console.log('API Response:', response.data);
+            
+            this.setState({
+                insights: response.data,
+                loading: false
+            });
+        } catch (error) {
+            console.error('Search error:', error);
+            this.setState({
+                error: 'Failed to fetch insights. Please try again.',
+                loading: false
+            });
+        }
+    };
 
-  addToWaitlist(job) {
-    const newAddedList = this.state.addedList;
-    newAddedList.push(job.id);
-    // console.log(job)
+    renderInsights() {
+        const { insights } = this.state;
+        if (!insights) return null;
 
-    $.ajax({
-      url: "http://127.0.0.1:5000/applications",
-      method: "POST",
-      data: JSON.stringify({
-        application: job,
-      }),
-      headers: {
-        Authorization: "Bearer " + localStorage.getItem("token"),
-        "Access-Control-Allow-Origin": "http://127.0.0.1:3000",
-        "Access-Control-Allow-Credentials": "true",
-      },
-      contentType: "application/json",
-      success: (msg) => {
-        console.log(msg);
-        alert("Added item!");
-      },
-    });
-    this.setState({
-      addedList: newAddedList,
-    });
-  }
+        return (
+            <div className="card my-4">
+                <div className="card-body">
+                    <h3 className="card-title mb-4">Career Insights: {this.state.searchText}</h3>
 
-  removeFromWaitlist(job) {
-    const newAddedList = this.state.addedList.filter((v) => {
-      return v !== job.id;
-    });
-    this.setState({
-      addedList: newAddedList,
-    });
-  }
+                    {/* Role Overview */}
+                    <div className="section mb-4">
+                        <h4 className="text-primary">Role Overview</h4>
+                        <p className="lead">{insights.roleOverview}</p>
+                    </div>
 
-  handleChange(event) {
-    this.setState({ [event.target.id]: event.target.value });
-  }
-
-  setSalary(event) {
-    this.setState({ [event.target.id]: event.target.value });
-  }
-
-  handleShowJobDesc(job) {
-    this.setState({
-      showJobDesc: !this.state.showJobDesc,
-      selectedJob: job,
-    });
-  }
-
-  render() {
-    const rows = this.state.rows;
-
-    let applicationModal = null;
-    if (this.state.job) {
-      applicationModal = (
-        <SearchCard
-          show={this.state.showModal}
-          submitFunc={this.addToWaitlist.bind(this)}
-          mode={this.state.modalMode}
-          application={this.state.job}
-          handleCloseEditModal={this.handleCloseEditModal.bind(this)}
-          deleteApplication={this.deleteTheApplication.bind(this)}
-        />
-      );
-    }
-
-    return (
-      <div>
-        <div className="d-flex justify-content-center my-5">
-          <input
-            type="text"
-            id="searchText"
-            className="form-control px-4 py-3 w-50"
-            placeholder="Keyword"
-            aria-label="Username"
-            aria-describedby="basic-addon1"
-            value={this.state.searchText}
-            onChange={this.handleChange.bind(this)}
-            style={{ fontSize: 18, marginRight: 20 }}
-          />
-          <button
-            type="button"
-            className="px-4 py-3 custom-btn"
-            onClick={this.search.bind(this)}
-            disabled={this.state.searching}
-          >
-            Search
-          </button>
-        </div>
-        {!this.state.searching && this.state.rows.length ? (
-          <table
-            className="table my-4"
-            style={{
-              boxShadow: "0px 5px 12px 0px rgba(0,0,0,0.1)",
-              marginTop: 30,
-              marginLeft: "10%",
-              width: "95%",
-              paddingRight: 10,
-            }}
-          >
-            <thead>
-              <tr>
-                {columns.map((column) => {
-                  return (
-                    <th
-                      className="p-3"
-                      key={column.id + "_th"}
-                      style={{
-                        fontSize: 18,
-                        fontWeight: "500",
-                        backgroundColor: "#2a6e85",
-                        color: "#fff",
-                      }}
-                    >
-                      {column.label}
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                return (
-                  <tr key={row.id}>
-                    {columns.map((column) => {
-                      const value = row[column.id];
-                      if (column.id !== "func") {
-                        return (
-                          <td className="p-3" key={column.id}>
-                            {value}
-                          </td>
-                        );
-                      } else {
-                        <button
-                          type="button"
-                          className="add-btn px-3 py-2"
-                          // onClick={this.showEditModal.bind(this, row)}
-                          onClick={this.handleShowJobDesc.bind(this, row)}
-                          // style={{
-                          //   backgroundColor: "#296E85",
-                          //   border: "none",
-                          // }}
-                        >
-                          Details
-                        </button>;
-                        const addButton = this.state.addedList.includes(
-                          row.id
-                        ) ? (
-                          <button
-                            type="button"
-                            className="btn btn-outline-secondary"
-                            onClick={this.removeFromWaitlist.bind(this, row)}
-                          >
-                            Added
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="add-btn px-3 py-2"
-                            // onClick={this.showEditModal.bind(this, row)}
-                            onClick={this.handleShowJobDesc.bind(this, row)}
-                            // style={{
-                            //   backgroundColor: "#296E85",
-                            //   border: "none",
-                            // }}
-                          >
-                            Details
-                          </button>
-                        );
-                        return (
-                          <td key={row.id + "_func"} className="p-2">
-                            {/* <div className="container"> */}
-                            <div className="d-flex justify-content-evenly">
-                              {addButton}
-                              {/* <button
-                                type="button"
-                                // style={{
-                                //   backgroundColor: "#e54b4b",
-                                //   border: "none",
-                                //   color: "#fff",
-                                //   borderRad
-                                // }}
-                                className="delete-btn px-3 py-2"
-                                onClick={this.deleteTheApplication.bind(
-                                  this,
-                                  row.id
-                                )}
-                                style={{
-                                  marginLeft:'2px'
-                                }}
-                              >
-                                {" "}
-                                Delete{" "}
-                              </button> */}
-                            </div>
-                            {/* <div className="row">
-                                <div className="col-md-4">{addButton}</div>
-                                &nbsp;&nbsp;
-                                <div className="col-md-2">
-                                  <button
-                                    type="button"
-                                    style={{
-                                      backgroundColor: "#e54b4b",
-                                      border: "none",
-                                    }}
-                                    className="btn btn-secondary"
-                                    onClick={this.deleteTheApplication.bind(
-                                      this,
-                                      row.id
-                                    )}
-                                  >
-                                    {" "}
-                                    Delete{" "}
-                                  </button>
+                    {/* Prerequisites */}
+                    {insights.prerequisites && (
+                        <div className="section mb-4">
+                            <h4 className="text-primary">Prerequisites</h4>
+                            <div className="row">
+                                <div className="col-md-4">
+                                    <h5>Education</h5>
+                                    <ul>
+                                        {insights.prerequisites.education.map((item, index) => (
+                                            <li key={index}>{item}</li>
+                                        ))}
+                                    </ul>
                                 </div>
-                              </div> */}
-                            {/* </div> */}
-                          </td>
-                        );
-                      }
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        ) : null}
-        {this.state.searching && (
-          <div className="d-flex justify-content-center my-5">
-            <Spinner animation="border" style={{ fontSize: 15 }} />
-          </div>
-        )}
-        {this.state.showJobDesc && (
-          <JobDescription
-            selectedJob={this.state.selectedJob}
-            setState={this.handleShowJobDesc.bind(this)}
-          />
-        )}
-        {applicationModal}
-      </div>
-    );
-  }
+                                <div className="col-md-4">
+                                    <h5>Experience</h5>
+                                    <ul>
+                                        {insights.prerequisites.experience.map((item, index) => (
+                                            <li key={index}>{item}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <div className="col-md-4">
+                                    <h5>Required Skills</h5>
+                                    <ul>
+                                        {insights.prerequisites.skills.map((item, index) => (
+                                            <li key={index}>{item}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Technical Skills */}
+                    <div className="section mb-4">
+                        <h4 className="text-primary">Technical Skills</h4>
+                        <div className="row">
+                            {insights.technicalSkills.map((skillSet, index) => (
+                                <div key={index} className="col-md-4 mb-3">
+                                    <div className="card h-100">
+                                        <div className="card-body">
+                                            <h5 className="card-title">{skillSet.category}</h5>
+                                            <ul className="list-unstyled">
+                                                {skillSet.tools.map((tool, i) => (
+                                                    <li key={i}>• {tool}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Soft Skills */}
+                    <div className="section mb-4">
+                        <h4 className="text-primary">Soft Skills</h4>
+                        <ul className="list-group">
+                            {insights.softSkills.map((skill, index) => (
+                                <li key={index} className="list-group-item">{skill}</li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Certifications */}
+                    <div className="section mb-4">
+                        <h4 className="text-primary">Recommended Certifications</h4>
+                        <div className="row">
+                            {insights.certifications.map((cert, index) => (
+                                <div key={index} className="col-md-4 mb-3">
+                                    <div className="card h-100">
+                                        <div className="card-body">
+                                            <h5>{cert.name}</h5>
+                                            <p><strong>Provider:</strong> {cert.provider}</p>
+                                            <p><strong>Level:</strong> {cert.level}</p>
+                                            <p>{cert.description}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Project Ideas */}
+                    <div className="section mb-4">
+                        <h4 className="text-primary">Project Ideas</h4>
+                        {insights.projectIdeas.map((project, index) => (
+                            <div key={index} className="card mb-3">
+                                <div className="card-body">
+                                    <h5>{project.title}</h5>
+                                    <p>{project.description}</p>
+                                    <div className="mb-3">
+                                        <strong>Technologies:</strong>
+                                        <div className="d-flex flex-wrap gap-2 mt-2">
+                                            {project.technologies.map((tech, i) => (
+                                                <span key={i} className="badge bg-info">{tech}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <strong>Learning Outcomes:</strong>
+                                        <ul>
+                                            {project.learningOutcomes.map((outcome, i) => (
+                                                <li key={i}>{outcome}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Industry Trends */}
+                    <div className="section mb-4">
+                        <h4 className="text-primary">Industry Trends</h4>
+                        <ul className="list-group">
+                            {insights.industryTrends.map((trend, index) => (
+                                <li key={index} className="list-group-item">{trend}</li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Salary Range */}
+                    <div className="section mb-4">
+                        <h4 className="text-primary">Salary Ranges</h4>
+                        <div className="card">
+                            <div className="card-body">
+                                <p><strong>Entry Level:</strong> {insights.salaryRange.entry}</p>
+                                <p><strong>Mid Level:</strong> {insights.salaryRange.mid}</p>
+                                <p><strong>Senior Level:</strong> {insights.salaryRange.senior}</p>
+                                <div className="mt-3">
+                                    <strong>Salary Factors:</strong>
+                                    <ul>
+                                        {insights.salaryRange.factors.map((factor, index) => (
+                                            <li key={index}>{factor}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Career Path */}
+                    <div className="section mb-4">
+                        <h4 className="text-primary">Career Path</h4>
+                        <div className="card">
+                            <div className="card-body">
+                                <div className="mb-3">
+                                    <h5>Entry Level</h5>
+                                    <p>{insights.careerPath.entryLevel}</p>
+                                </div>
+                                <div className="mb-3">
+                                    <h5>Mid Level</h5>
+                                    <p>{insights.careerPath.midLevel}</p>
+                                </div>
+                                <div className="mb-3">
+                                    <h5>Senior Level</h5>
+                                    <p>{insights.careerPath.senior}</p>
+                                </div>
+                                <div>
+                                    <h5>Advancement Opportunities</h5>
+                                    <ul>
+                                        {insights.careerPath.advancement.map((path, index) => (
+                                            <li key={index}>{path}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Learning Resources */}
+                    <div className="section mb-4">
+                        <h4 className="text-primary">Learning Resources</h4>
+                        <div className="row">
+                            {insights.learningResources.map((resource, index) => (
+                                <div key={index} className="col-md-4 mb-3">
+                                    <div className="card h-100">
+                                        <div className="card-body">
+                                            <h5>{resource.name}</h5>
+                                            <p><strong>Type:</strong> {resource.type}</p>
+                                            <p><strong>Cost:</strong> {resource.cost}</p>
+                                            <p><strong>Duration:</strong> {resource.duration}</p>
+                                            <p>{resource.description}</p>
+                                            <a
+                                                href={resource.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="btn btn-primary btn-sm"
+                                            >
+                                                Access Resource
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    render() {
+        return (
+            <div className="container mt-4">
+                <div className="row justify-content-center">
+                    <div className="col-md-8">
+                        <div className="input-group mb-3">
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Enter job title (e.g., Data Scientist)"
+                                value={this.state.searchText}
+                                onChange={(e) => this.setState({ searchText: e.target.value })}
+                            />
+                            <button
+                                className="btn btn-primary"
+                                onClick={this.handleSearch}
+                                disabled={this.state.loading}
+                            >
+                                {this.state.loading ? 'Searching...' : 'Search'}
+                            </button>
+                        </div>
+
+                        {this.state.error && (
+                            <div className="alert alert-danger">{this.state.error}</div>
+                        )}
+
+                        {this.state.loading && (
+                            <div className="text-center my-5">
+                                <div className="spinner-border text-primary" role="status">
+                                    <span className="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {this.renderInsights()}
+                    </div>
+                </div>
+            </div>
+        );
+    }
 }
+
+export default SearchPage;
