@@ -9,15 +9,15 @@ import '../static/Sidebar.css'
 export default class Sidebar extends Component {
   render() {
     return (
-      <div class="left-nav">
-        <div class="left-nav-item">
+      <div className="left-nav">
+        <div className="left-nav-item">
           <div onClick={() => this.props.switchPage('SearchPage')}>
-            <i class="fas fa-search left-nav-icon"></i>
-            <span class="left-nav-label">Search</span>
+            <i className="fas fa-search left-nav-icon"></i>
+            <span className="left-nav-label">Analysis</span>
           </div>
           <div onClick={() => this.props.switchPage('ManageResumePage')}>
-            <i class="fas fa-folder left-nav-icon"></i>
-            <span class="left-nav-label">Manage</span>
+            <i className="fas fa-folder left-nav-icon"></i>
+            <span className="left-nav-label">Manage</span>
           </div>
           <div onClick={() => this.props.switchPage('MatchesPage')}>
             <i class="fas fa-check-double left-nav-icon"></i>

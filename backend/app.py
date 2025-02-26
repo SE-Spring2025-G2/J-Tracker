@@ -880,6 +880,105 @@ def create_app():
             return response, 200
         except:
             return jsonify({"error": "Internal server error"}), 500
+    
+    @app.route("/parse-resume", methods=["POST"])
+    def parse_resume():
+        try:
+            resume_file = request.files['resume']
+            # Use a PDF parsing library like PyPDF2 or pdfplumber to extract text
+            # For this example, we'll use PyPDF2
+            from PyPDF2 import PdfReader
+            
+            reader = PdfReader(resume_file)
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text()
+
+            # Use GPT to structure the resume content
+            headers = {
+                "Authorization": "Bearer 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",
+                "Content-Type": "application/json"
+            }
+            
+            prompt = f"""
+            Parse this resume text and extract key information in JSON format:
+            {text}
+            
+            Return format:
+            {{
+                "skills": ["skill1", "skill2"],
+                "experience": ["exp1", "exp2"],
+                "education": ["edu1", "edu2"],
+                "certifications": ["cert1", "cert2"]
+            }}
+            """
+            
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json={
+                    "model": "gpt-3.5-turbo",
+                    "messages": [
+                        {"role": "system", "content": "You are a resume parser."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.7
+                }
+            )
+            
+            parsed_resume = response.json()['choices'][0]['message']['content']
+            return jsonify(json.loads(parsed_resume))
+
+        except Exception as e:
+            print(f"Error parsing resume: {str(e)}")
+            return jsonify({"error": "Failed to parse resume"}), 500
+
+    @app.route("/compare-resume", methods=["POST"])
+    def compare_resume():
+        try:
+            data = request.json
+            resume = data['resume']
+            job_insights = data['jobInsights']
+            
+            # Use GPT to compare resume with job requirements
+            headers = {
+                "Authorization": "Bearer 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",
+                "Content-Type": "application/json"
+            }
+            
+            prompt = f"""
+            Compare this resume with the job requirements and provide a detailed analysis:
+            Resume: {json.dumps(resume)}
+            Job Requirements: {json.dumps(job_insights)}
+            
+            Return format:
+            {{
+                "overallMatch": percentage,
+                "matchingSkills": ["skill1", "skill2"],
+                "missingSkills": ["skill1", "skill2"],
+                "recommendations": ["rec1", "rec2"]
+            }}
+            """
+            
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json={
+                    "model": "gpt-3.5-turbo",
+                    "messages": [
+                        {"role": "system", "content": "You are a resume analyzer."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.7
+                }
+            )
+            
+            comparison = response.json()['choices'][0]['message']['content']
+            return jsonify(json.loads(comparison))
+
+        except Exception as e:
+            print(f"Error comparing resume: {str(e)}")
+            return jsonify({"error": "Failed to compare resume"}), 500
 
     return app
 
