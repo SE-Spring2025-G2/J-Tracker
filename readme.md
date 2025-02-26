@@ -34,7 +34,7 @@ Containerizing the application with docker has helped us achieve 2 significant t
 1. Dramatically boosting the speed at which one would be able to configure the project in their machines.
 2. Automation of the entire run of the application including running the tests!
 
-### Other new features and updates
+### ⭐ New AI Features and Updates!
 1. Improved scalability and maintainability with optimized querying and restructured user entity fields.
 2. AI-driven job matching system leveraging user profiles and resumes for better recommendations.
 3. Enhanced profile updates and better resume parsing for accurate job-fit analysis.
