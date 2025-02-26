@@ -1,4 +1,4 @@
-name: Python Tests
+name: Run Pytest for test_akulka24
 
 on:
   push:
@@ -11,114 +11,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.8'
 
-    - name: Install essential dependencies
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest==7.4.4
-        pip install requests==2.31.0
-        pip install openai==1.12.0
-        pip install python-dotenv==1.0.0
-        pip install flask==2.2.5
-        pip install flask-mongoengine
-        pip install pymongo
-        pip install dnspython
-        pip install flask_cors
-        pip install beautifulsoup4
-        pip install fake-useragent
-        pip install pandas
-        pip install authlib
+        pip install pytest pymongo flask requests
 
-    - name: Run test1 (Job Search)
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        python -m pytest tests/test1_akulka24.py -v -s --junitxml=test1-report.xml
-
-    - name: Run test2 (Password Hashing)
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        python -m pytest tests/test2_akulka24.py -v -s --junitxml=test2-report.xml
-
-    - name: Run test3 (Job Applications MongoDB)
+    - name: Run Pytest
       env:
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        python -m pytest tests/test3_akulka24.py -v -s --junitxml=test3-report.xml
-
-    - name: Run test4 (Login Failure)
-      env:
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        python -m pytest tests/test4_akulka24.py -v -s --junitxml=test4-report.xml
-
-    - name: Run test5 (AI Job Recommendations)
-      env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        PYTHONPATH: ${{ github.workspace }}
       run: |
-        python -m pytest tests/test5_akulka24.py -v -s --junitxml=test5-report.xml
+        python -m pytest test_akulka24.py -v -s --junitxml=test-report.xml
 
-    - name: Run test6 (API Key Check)
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        python -m pytest tests/test6_akulka24.py -v -s --junitxml=test6-report.xml
-
-    - name: Upload Test 1 Results
-      if: always()  # This ensures the step runs even if tests fail
-      uses: actions/upload-artifact@v4
-      with:
-        name: test1-results
-        path: test1-report.xml
-        retention-days: 30
-
-    - name: Upload Test 2 Results
-      if: always()  # This ensures the step runs even if tests fail
-      uses: actions/upload-artifact@v4
-      with:
-        name: test2-results
-        path: test2-report.xml
-        retention-days: 30
-
-    - name: Upload Test 3 Results
-      if: always()  # This ensures the step runs even if tests fail
-      uses: actions/upload-artifact@v4
-      with:
-        name: test3-results
-        path: test3-report.xml
-        retention-days: 30
-
-    - name: Upload Test 4 Results
+    - name: Upload Test Results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
-        name: test4-results
-        path: test4-report.xml
-        retention-days: 30
-
-    - name: Upload Test 5 Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test5-results
-        path: test5-report.xml
-        retention-days: 30
-
-    - name: Upload Test 6 Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test6-results
-        path: test6-report.xml
+        name: pytest-results
+        path: test-report.xml
