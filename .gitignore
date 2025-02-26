@@ -25,7 +25,7 @@ frontend/yarn.lock
 *.rar
 
 #.yml file
-backend/application.yml
+# backend/application.yml
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
@@ -565,6 +565,6 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 
-*.yml
+# *.yml
 
-backend/application.yml
+# backend/application.yml

@@ -1,47 +1,44 @@
 # J-Tracker - Your Job Tracking Assistant
 
-[![GitHub license](https://img.shields.io/github/license/jashgopani/application-tracking-system)](https://github.com/jashgopani/application-tracking-system/blob/main/LICENSE)
+[![GitHub license](https://img.shields.io/github/license/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/blob/main/LICENSE)
 [![DOI](https://zenodo.org/badge/426259091.svg)](https://zenodo.org/badge/latestdoi/426259091)
-[![codecov](https://codecov.io/gh/jashgopani/application-tracking-system/branch/main/graph/badge.svg)](https://codecov.io/gh/kingan1/application-tracking-system)
-[![GitHub issues](https://img.shields.io/github/issues/jashgopani/application-tracking-system)](https://github.com/jashgopani/application-tracking-system/issues)
-[![Github closes issues](https://img.shields.io/github/issues-closed-raw/jashgopani/application-tracking-system)](https://github.com/jashgopani/application-tracking-system/issues?q=is%3Aissue+is%3Aclosed)
-![GitHub top language](https://img.shields.io/github/languages/top/jashgopani/application-tracking-system)
+[![codecov](https://codecov.io/gh/ncsu-csc-510/Project2/branch/main/graph/badge.svg)](https://codecov.io/gh/kingan1/application-tracking-system)
+[![GitHub issues](https://img.shields.io/github/issues/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/issues)
+[![Github closes issues](https://img.shields.io/github/issues-closed-raw/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/issues?q=is%3Aissue+is%3Aclosed)
+![GitHub top language](https://img.shields.io/github/languages/top/ncsu-csc-510/Project2)
+![Test Status](https://github.com/ncsu-csc-510/Project2/workflows/Test/badge.svg)
 
 <p align="center"><img width="700" src="./resources/ApplicationTrackingAnimation.gif"></p>
 
-The process of applying for jobs and internships is not a cakewalk. Managing job applications is a time-consuming process. Due to the referrals and deadlines, the entire procedure can be stressful. Our application allows you to track and manage your job application process, as well as regulate it, without the use of cumbersome Excel spreadsheets.
+The internship application and job application process is no picnic. Job application management is time-consuming. With the referrals and deadlines, the whole process can get daunting. Our app enables you to track and organize your job application process, and manage it, without the inconvenience of clunky Excel spreadsheets.
 
-Our application keeps track of the jobs you've added to your wish list. It also keeps track of the companies you've already applied to and keeps a list of any rejections. Rather than having the user browse each company's site for potential prospects, our application allows the applicant to search for them directly using basic keywords. Any prospective work offers can then be added to the applicant's wishlist.
+Our software maintains a record of the work you have wish-listed. It records those companies that you have applied for and records any rejections. Instead of making the user visit each company's website for prospects, our software enables the applicant to look for them directly using simple keywords. Any possible offer of work may then be wish-listed by the applicant.
 
-## New Features in Phase 3
-🎥[Phase-2 Demo Video](https://www.youtube.com/watch?v=VKTob1N19ug)
+## New Features in Project2
+<!-- TODO: Add youtube video link below -->
 
-## ⭐ Highlight of Phase 3 ⭐
+🎥[Project2 Demo Video](https://www.youtube.com/watch?v=VKTob1N19ug) 
+
+## ⭐ Highlight of Project2 ⭐
 ### Dockerization 🗃️
-Containerizing the application with docker has helped us achieve 2 prominent things
-1. Significantly increasing the speed in which one would be able to setup the project on their machines.
+Containerizing the application with docker has helped us achieve 2 significant things
+1. Dramatically boosting the speed at which one would be able to configure the project in their machines.
 2. Automation of the entire run of the application including running the tests!
 
-### Other new features
-1. Upload Resume versions
-2. Bookmark option for the job recommendations
-3. Enhanced Search to fetch latest job opportunities
-4. Updated country list that now supports 120+ countries
-5. Updated skills list so that you can present your profile without missing on any skill
-6. Refactorization of Class components into functional components which makes the code more maintainable
+### Other new features and updates
+1. Improved scalability and maintainability with optimized querying and restructured user entity fields.
+2. AI-driven job matching system leveraging user profiles and resumes for better recommendations.
+3. Enhanced profile updates and better resume parsing for accurate job-fit analysis.
+4. AI integration for personalized career path suggestions and top opportunity highlights.
 
 #### Bug fixes
-1. Undefined profile image.
-2. Authentication into the application randomly not working.
-3. Unable to load matched jobs
-4. Application screen throwing null pointer randomly
+1. OAuth Restoration
+2. Docker Restoration Repair
+3. Authentication into the application randomly not working.
+3. Resolved profile update errors and improved system stability and efficiency
+
 
 ---
-
-### Application Demo video
-
-https://user-images.githubusercontent.com/89501363/144725439-5d9191f8-df13-4814-aa15-99cd752ab0cc.mp4
-
 ## Table of contents
 
 - [Basic Design](#basic-design)
@@ -62,7 +59,7 @@ https://user-images.githubusercontent.com/89501363/144725439-5d9191f8-df13-4814-
 
 ## Basic Design:
 
-![Basic Design](https://github.com/prithvish-doshi-17/application-tracking-system/blob/main/resources/Overall%20Design.PNG)
+![Basic Design](https://github.com/ncsu-csc-510/Project2/blob/main/resources/Overall%20Design.PNG)
 
 ## Samples:
 
@@ -82,48 +79,49 @@ Users can add or update information to their profile, such as their personal inf
 
 <p align="center"><img width="700" src="./resources/profilepage.png"></p>
 
-### SearchPage
+### JobSearchPage 
 
-The interface through which a user is able to search for specific jobs and apply on them through the 'Apply' button.
+1. A past analyses column has been added to the dashboard. Here the users will get a summarized version of the comparison between their resume and the job they would like to apply to. 
 
-1. Navigate to Job search page, search for particular Job.
-2. Click on Details button to see the Job Details
-3. Click on Apply button which will redirect to the Job Apply link.
+2. Another feature has been added for ease of use by mentioning a summary of the applications made by each user. The dashboard now shows a count of all the applications as well as the category- Applied, Rejected, Wish List and Waiting for Referral.
 
-<p align="center"><img width="700" src="./resources/search_roles_companywise.png"></p> 
-<p align="center"><img width="700" src="./resources/FindJobs.png"></p>
-<p align="center"><img width="700" src="./resources/Job_Description.png"></p>
+3. In the earlier versions of the software the skills were not saved for when the user logs in again. We have solved this bug. Now the users can see their previous preferences after logging in again. They can then update these without any hassle. We have made sure that our database and our code takes care of managing this
+
+4. We have incorporated an AI model to recommend jobs to the user. Instead of just fetching jobs from google, our code will now based off the preferences of the user, their skills, their experience will curate job opportunities for the user. In this way, the user is only recommended jobs that fit their application requirements and they don’t have to waste time reading the job description thoroughly
+
+
+
+<p align="center"><img width="700" src="./resources/new_dashboard.png"></p> 
+<p align="center"><img width="700" src="./resources/new_dashboard2.png"></p>
+<p align="center"><img width="700" src="./resources/match_analysis.png"></p>
+<p align="center"><img width="700" src="./resources/Job_sight.png"></p>
+<p align="center"><img width="700" src="./resources/Job_sights.png"></p>
+
+
 
 ### ApplicationPage
 
-The user is able to access different saved applications - Waitlisted applications, Waiting for Refereals, Applied Jobs, Application Status. The user can also add more jobs to track through this screen.
+The user is able to see different saved applications - Waitlisted applications, Waiting for Refereals, Applied Jobs, Application Status. The user is also able to add more jobs to track using this screen.
 
 <p align="center"><img width="700" src="./resources/AddApplicationpage.png"></p>
 
 ### MatchesPage
 
-On this page, user can see different jobs that would be recommended to them based on their profile and their preferences. User can apply for that position from this page too.
+Here, user is able to see different jobs which would be recommended to them according to their profile and also their interest. User can apply for that job from this page as well.
 
 <p align="center"><img width="700" src="./resources/Recommendjobspage.png"></p>
 
+### FinalViewOfDashboard
+
+<p align="center"><img width="700" src="./resources/Final_Dashboard.png"></p>
+
+
 ## Future Scope:
 
-- Include deadline reminders for the application and interview.
-- Add a feature that allows users to attach these reminders to their Google calendar.
-- Incorporate notifications for upcoming deadlines.
-- Include a link to the university’s career fair page.
-- Direct connection to Linkedin, allowing for the addition of job opportunities to the wishlist.
-- An option to maintain separate profiles for job tracking.
-- Integrate the database into docker
-
-## Explanation:
-
-Currently, we have four fundamental steps in our project:
-
-1. The SearchPage where users can search about the Job Postings
-2. The MatchesPage where users get recommendation about the jobs according to their preferences
-3. The ApplicationsPage where users can add and see the position they applied to and can update/delete the the information. Any details in any table can be modified at any time during the process
-4. The ProfilePage where user can add his skills, experience level and preffered location. This information is used to recommend user jobs that require similar skillsets
+- AI Job Matching: Advanced AI predicts best-fit jobs and offers real-time market insights based on user skills.
+- Automated Tracking: AI tracks application statuses via parsing and updates progress from job portals.
+- Interview Prep: AI-driven mock interviews with real-time feedback and role-specific questions.
+- Multi-Platform Sync: Syncs with LinkedIn, job boards, and ATS; mobile app for real-time updates.
 
 ## Technologies Used:
 
@@ -146,7 +144,7 @@ Currently, we have four fundamental steps in our project:
 ### Steps to follow for the installation:
 
 1. **Clone the Repository**
-    - Use the command `git clone https://github.com/jashgopani/application-tracking-system.git` to clone the repository.
+    - Use the command `git clone https://github.com/ncsu-csc-510/Project2.git` to clone the repository.
 
 2. **Start the Docker Engine**
     - Ensure that Docker is installed on your system. If not, you can download it from the official Docker website.
@@ -214,10 +212,7 @@ Please see our CONTRIBUTING.md for instructions on how to contribute to the repo
 
 ## Team Members
 
-- Akhilesh Neeruganti
-- Jash Gopani
-- Hemil Mehta
-- Rohan Ajmera
+- Anchal Kakadia
+- Aniruddha Kulkarni
+- Aranya Venugopal
 
-## Contact Info
-For any questions, please email neerua08@gmail.com.

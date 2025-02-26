@@ -1,0 +1,7 @@
+GOOGLE_CLIENT_ID : 757546169439-2ekmu22pkehg555irtef3gvd03457k10.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET : 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
+CONF_URL : https://accounts.google.com/.well-known/openid-configuration
+SECRET_KEY : D8ajzp3GmMRKcSViGEm+KmnG9l7G3XghFAr91R9S+NA=
+USERNAME : akakadi
+PASSWORD : PHzJPFrq3t9bNuVN
+CLUSTER_URL : mongodb+srv://akakadi:PHzJPFrq3t9bNuVN@cluster0.brnbh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
