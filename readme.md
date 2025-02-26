@@ -1,5 +1,6 @@
 # J-Tracker - Your Job Tracking Assistant
 
+[![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 [![GitHub license](https://img.shields.io/github/license/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/blob/main/LICENSE)
 [![DOI](https://zenodo.org/badge/426259091.svg)](https://zenodo.org/badge/latestdoi/426259091)
 [![codecov](https://codecov.io/gh/ncsu-csc-510/Project2/branch/main/graph/badge.svg)](https://codecov.io/gh/kingan1/application-tracking-system)
@@ -14,8 +15,6 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/m/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/graphs/commit-activity)
 
 [![Collaborators](https://img.shields.io/badge/Collaborators-3-orange.svg?style=flat)](https://github.com/ncsu-csc-510/Project2/graphs/contributors)
-[![codecov](https://codecov.io/gh/ncsu-csc-510/Project2/graph/badge.svg?token=5Q5FTFG82W)](https://codecov.io/gh/ncsu-csc-510/Project2)
-
 [![Documentation Badge](https://img.shields.io/badge/API_Documentation-pdoc-blue.svg)](https://lemon-desert-093c6c80f.2.azurestaticapps.net/)
 [![Documentation Badge](https://img.shields.io/badge/APP_Documentation-compodoc-blue.svg)](https://victorious-sky-08a81ed0f.2.azurestaticapps.net/)
 
@@ -26,9 +25,8 @@ The internship application and job application process is no picnic. Job applica
 Our software maintains a record of the work you have wish-listed. It records those companies that you have applied for and records any rejections. Instead of making the user visit each company's website for prospects, our software enables the applicant to look for them directly using simple keywords. Any possible offer of work may then be wish-listed by the applicant.
 
 ## New Features in Project2
-<!-- TODO: Add youtube video link below -->
 
-🎥[Project2 Demo Video](https://www.youtube.com/watch?v=VKTob1N19ug) 
+🎥[Project2 Demo Video](https://drive.google.com/file/d/1dzq3PYMK-vSxBg1yp8uFzMbsFr2sq76F/view?usp=drive_link) 
 
 ## ⭐ Highlight of Project2 ⭐
 ### Dockerization 🗃️
