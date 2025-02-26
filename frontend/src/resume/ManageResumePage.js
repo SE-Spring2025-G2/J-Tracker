@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import $ from 'jquery'
-import { Container, Row, Col, Card, Button } from 'react-bootstrap'
+import '../static/resume.css'
 
 
 export default class ManageResumePage extends Component {
@@ -19,7 +19,7 @@ export default class ManageResumePage extends Component {
 
   getFiles () {
     $.ajax({
-          url: 'http://127.0.0.1:5000/resume',
+          url: 'http://127.0.0.1:5001/resume',
           method: 'GET',
           headers: {
             'Authorization': 'Bearer ' + localStorage.getItem('token'),
@@ -55,7 +55,7 @@ export default class ManageResumePage extends Component {
         //console.log(formData);
 
         $.ajax({
-          url: 'http://127.0.0.1:5000/resume',
+          url: 'http://127.0.0.1:5001/resume',
           method: 'POST',
           headers: {
             'Authorization': 'Bearer ' + localStorage.getItem('token'),
@@ -74,7 +74,7 @@ export default class ManageResumePage extends Component {
 
  downloadResume(){
   $.ajax({
-          url: 'http://127.0.0.1:5000/resume',
+          url: 'http://127.0.0.1:5001/resume',
           method: 'GET',
           headers: {
             'Authorization': 'Bearer ' + localStorage.getItem('token'),
@@ -108,57 +108,30 @@ export default class ManageResumePage extends Component {
 
   render () {
     return (
-      <Container style={{ marginTop: "20px" }}>
-        <Row>
-          <Col md={12}>
-            <Card style={{
-              marginLeft: "10%",
-              borderColor: "#ccc",
-              borderRadius: "5px",
-              boxShadow: "0 4px 8px 0 rgba(0, 0, 0, 0.2)",
-              padding: "20px"
-            }}>
-              <Card.Body>
-                <h2>Upload Resume</h2>
-                <div className="mb-4">
-                  <input 
-                    id="file" 
-                    name="file" 
-                    type="file" 
-                    className="form-control" 
-                    onChange={this.handleChange.bind(this)}
-                  />
-                  <Button 
-                    style={{ marginTop: "10px", backgroundColor: "#296E85" }}
-                    onClick={this.uploadResume.bind(this)}
-                  >
-                    Upload
-                  </Button>
-                </div>
 
-                <h2>Uploaded Documents</h2>
-                <Card style={{ padding: "15px" }}>
-                  <Row>
-                    <Col sm={8}>
-                      <h5>{this.state.fileName || "No resume uploaded"}</h5>
-                    </Col>
-                    <Col sm={4} className="text-right">
-                      {this.state.fileName && (
-                        <Button 
-                          variant="primary"
-                          onClick={this.downloadResume.bind(this)}
-                        >
-                          Download
-                        </Button>
-                      )}
-                    </Col>
-                  </Row>
-                </Card>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
+    <form class="pagelayout" id="upload-file" method="post" encType="multipart/form-data">
+        <input id = "file" name="file" type="file" onChange={this.handleChange.bind(this)}></input>
+        <button id="upload-file-btn" onClick={this.uploadResume.bind(this)} type="button">Upload</button>
+
+        <div style={{margin:2 + 'em'}}></div>
+        <div >
+
+        <h2>Uploaded Documents</h2>
+            <table>
+              <tr>
+                <th class="tablecol1">Documents</th>
+                <th class="tablecol2">Actions</th>
+              </tr>
+              <tr>
+                <td class="tablecol1">{this.state.fileName}</td>
+                <td class="tablecol2"><button id="download" onClick={this.downloadResume.bind(this)} type="button">Download</button></td>
+              </tr>
+            </table>
+            </div>
+
+    </form>
     )
+
+
   }
 }
