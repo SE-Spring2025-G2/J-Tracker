@@ -50,6 +50,12 @@ jobs:
       run: |
         python -m pytest tests/test3_akulka24.py -v -s --junitxml=test3-report.xml
 
+    - name: Run test4 (Login Failure)
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        python -m pytest tests/test4_akulka24.py -v -s --junitxml=test4-report.xml
+
     - name: Upload Test 1 Results
       if: always()  # This ensures the step runs even if tests fail
       uses: actions/upload-artifact@v4
@@ -73,12 +79,6 @@ jobs:
         name: test3-results
         path: test3-report.xml
         retention-days: 30
-
-    - name: Run test4 (Login Failure)
-      env:
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        python -m pytest tests/test4_akulka24.py -v -s --junitxml=test4-report.xml
 
     - name: Upload Test 4 Results
       if: always()
