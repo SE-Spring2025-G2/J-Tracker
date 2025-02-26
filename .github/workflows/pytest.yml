@@ -26,6 +26,7 @@ jobs:
         pip install requests==2.31.0
         pip install openai==1.12.0
         pip install python-dotenv==1.0.0
+        pip install flask  # Added Flask for test2
 
     - name: Verify installations
       run: |
@@ -36,4 +37,4 @@ jobs:
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
-        python -m pytest tests/test1_akulka24.py -v -s
+        python -m pytest tests/ -v -s
