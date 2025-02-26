@@ -1033,6 +1033,92 @@ def create_app():
 
 app = create_app()
 
+# class Users(db.Document):
+#     """
+#     Users class. Holds full name, username, password, as well as applications and resumes
+#     """
+#     id = db.IntField(primary_key=True)
+#     # ... existing fields ...
+#     profilePhoto = db.FileField()  # Add this field
+#     # ... rest of the fields ...
+
+# # Add these new routes inside create_app():
+
+#     @app.route("/profilePhoto", methods=["POST"])
+#     def upload_profile_photo():
+#         """
+#         Uploads or updates the profile photo for the user.
+#         The file should be sent with the form field 'profilePhoto'.
+#         """
+#         try:
+#             userid = get_userid_from_header()
+#             try:
+#                 file = request.files["profilePhoto"]
+#             except:
+#                 return jsonify({"error": "No profile photo file found in the input"}), 400
+
+#             user = Users.objects(id=userid).first()
+#             try:
+#                 if not user.profilePhoto.read():
+#                     user.profilePhoto.put(file, filename=file.filename, content_type=file.content_type)
+#                     user.save()
+#                     return jsonify({"message": "Profile photo successfully uploaded"}), 200
+#                 else:
+#                     user.profilePhoto.replace(file, filename=file.filename, content_type=file.content_type)
+#                     user.save()
+#                     return jsonify({"message": "Profile photo successfully replaced"}), 200
+#             except Exception as inner_e:
+#                 user.profilePhoto.put(file, filename=file.filename, content_type=file.content_type)
+#                 user.save()
+#                 return jsonify({"message": "Profile photo successfully uploaded"}), 200
+#         except Exception as e:
+#             print(e)
+#             return jsonify({"error": "Internal server error"}), 500
+
+#     @app.route("/profilePhoto", methods=["GET"])
+#     def get_profile_photo_url():
+#         """
+#         Returns the URL for accessing the user's profile photo.
+#         The returned URL points to the '/profilePhoto/file' endpoint.
+#         """
+#         try:
+#             userid = get_userid_from_header()
+#             user = Users.objects(id=userid).first()
+#             if not user.profilePhoto or not user.profilePhoto.read():
+#                 return jsonify({"error": "No profile photo found"}), 404
+#             user.profilePhoto.seek(0)
+#             photo_url = url_for("serve_profile_photo", _external=True)
+#             return jsonify({"url": photo_url}), 200
+#         except Exception as e:
+#             print(e)
+#             return jsonify({"error": "Internal server error"}), 500
+
+#     @app.route("/profilePhoto/file", methods=["GET"])
+#     def serve_profile_photo():
+#         """
+#         Serves the actual profile photo file.
+#         """
+#         try:
+#             userid = get_userid_from_header()
+#             user = Users.objects(id=userid).first()
+#             if not user.profilePhoto or not user.profilePhoto.read():
+#                 return jsonify({"error": "No profile photo found"}), 404
+#             user.profilePhoto.seek(0)
+#             filename = user.profilePhoto.filename
+#             content_type = user.profilePhoto.contentType if user.profilePhoto.contentType else "application/octet-stream"
+#             response = send_file(
+#                 user.profilePhoto,
+#                 mimetype=content_type,
+#                 download_name=filename,
+#                 as_attachment=True,
+#             )
+#             response.headers["x-filename"] = filename
+#             response.headers["Access-Control-Expose-Headers"] = "x-filename"
+#             return response, 200
+#         except Exception as e:
+#             print(e)
+#             return jsonify({"error": "Internal server error"}), 500
+
 
 # with open("application.yml") as f:
 #     info = yaml.load(f, Loader=yaml.FullLoader)
