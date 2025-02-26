@@ -104,7 +104,7 @@ Users can add or update information to their profile, such as their personal inf
 <p align="center"><img width="700" src="https://github.com/ncsu-csc-510/Project2/blob/main/media/media2.png"></p>
 <p align="center"><img width="700" src="https://github.com/ncsu-csc-510/Project2/blob/main/media/media3.png"></p>
 <p align="center"><img width="700" src="https://github.com/ncsu-csc-510/Project2/blob/main/media/media4.png"></p>
-<p align="center"><img width="700" src="./resources/Job_sights.png"></p>
+<p align="center"><img width="700" src="https://github.com/ncsu-csc-510/Project2/blob/main/media/media6.png"></p>
 
 
 
