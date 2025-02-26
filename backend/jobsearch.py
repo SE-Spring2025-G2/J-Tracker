@@ -30,7 +30,7 @@ def get_ai_job_recommendations(skills, job_levels, locations):
             "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
             "Content-Type": "application/json"
         }
-        
+         
         data = {
             "model": "gpt-3.5-turbo",
             "messages": [
