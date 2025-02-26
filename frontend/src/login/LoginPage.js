@@ -11,23 +11,32 @@ export default class LoginPage extends Component {
 
 	handleLogin = (uname, pwd) => {
 		console.log('Login click');
-		let obj = {
-			username: uname,
-			password: pwd
-		};
-		//console.log(obj)
+		let obj = { username: uname, password: pwd };
+	
 		getToken(obj)
 			.then((res) => {
-				console.log(res);
-				if (res['error']) throw new Error('Wrong username or password');
+				console.log("Login API Response:", res);
+	
+				if (!res || res.error) {
+					throw new Error('Wrong username or password');
+				}
+	
+				// Ensure res.profile exists
+				if (!res.profile) {
+					console.error("Profile data missing in API response:", res);
+					alert("Error: Profile data is missing!");
+					return;
+				}
+	
 				storeToken({ ...res, userId: res.profile.id });
 				this.props.side(res.profile);
 			})
 			.catch((error) => {
-				console.log(error);
-				alert('Error while login ! Wrong username or password');
+				console.error("Login Error:", error);
+				alert('Error while logging in! Wrong username or password');
 			});
 	};
+	
 
 	handleSignup = (fullname, uname, pwd) => {
 		console.log('Signup click');
@@ -47,7 +56,7 @@ export default class LoginPage extends Component {
 	};
 
 	handleSignupGoogle = () => {
-		window.open('http://localhost:5001/users/signupGoogle'); // Google oauth url
+		window.open('http://localhost:5000/users/signupGoogle'); // Google oauth url
 	};
 
 	componentDidMount() {

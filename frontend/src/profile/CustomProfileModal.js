@@ -15,7 +15,7 @@ const CustomProfileModal = (props) => {
 		} else {
 			axios
 				.post(
-					'http://localhost:5001/updateProfile',
+					'http://localhost:5000/updateProfile',
 					{
 						...data
 					},

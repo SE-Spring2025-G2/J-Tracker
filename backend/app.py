@@ -12,10 +12,10 @@ from flask_mongoengine import MongoEngine
 from flask_cors import CORS, cross_origin
 
 from bs4 import BeautifulSoup
-
+import os
 from fake_useragent import UserAgent
 import pandas as pd
-
+from jobsearch import get_ai_job_recommendations
 
 import yaml
 
@@ -43,12 +43,17 @@ def create_app():
     CORS(app)
 
     # get all the variables from the application.yml file
+    # with open("application.yml") as f:
+    #     info = yaml.load(f, Loader=yaml.FullLoader)
+    #     GOOGLE_CLIENT_ID = info["GOOGLE_CLIENT_ID"]
+    #     GOOGLE_CLIENT_SECRET = info["GOOGLE_CLIENT_SECRET"]
+    #     CONF_URL = info["CONF_URL"]
+    #     app.secret_key = info['SECRET_KEY']
+
     with open("application.yml") as f:
         info = yaml.load(f, Loader=yaml.FullLoader)
-        GOOGLE_CLIENT_ID = info["GOOGLE_CLIENT_ID"]
-        GOOGLE_CLIENT_SECRET = info["GOOGLE_CLIENT_SECRET"]
-        CONF_URL = info["CONF_URL"]
-        app.secret_key = info['SECRET_KEY']
+        app.secret_key = info.get("SECRET_KEY", "default_secret_key")  # Use a default value if not found
+
 
     app.config["CORS_HEADERS"] = "Content-Type"
 
@@ -114,7 +119,7 @@ def create_app():
         except:
             return jsonify({"error": "Internal server error"}), 500
 
-    def get_token_from_header(): 
+    def get_token_from_header():
         """
         Evaluates token from the request header
 
@@ -169,6 +174,7 @@ def create_app():
             },
             nonce='foobar'
         )
+
         # Redirect to google_auth function
         redirect_uri = url_for('authorized', _external=True)
         print(redirect_uri)
@@ -309,100 +315,130 @@ def create_app():
     @app.route("/getRecommendations", methods=["GET"])
     def getRecommendations():
         """
-        Update the user profile with preferences: skills, job-level and location
+        Get AI-powered job recommendations based on user's profile
         """
         try:
             userid = get_userid_from_header()
             user = Users.objects(id=userid).first()
-            print(user["skills"])
-            skill_sets = [x["value"] for x in user["skills"]]
-            job_levels_sets = [x["value"] for x in user["job_levels"]]
-            locations_set = [x["value"] for x in user["locations"]]
-            recommendedJobs = []
-            headers = {"User-Agent":
-                       #    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"
-                       user_agent.random,
-                       "Referrer": "https://www.google.com/"
-                       }
-            if len(skill_sets) > 0 or len(job_levels_sets) > 0 or len(locations_set) > 0:
-                random_skill = random.choice(skill_sets)
-                random_job_level = random.choice(job_levels_sets)
-                random_location = random.choice(locations_set)
-                query = "https://www.google.com/search?q=" + random_skill + \
-                    random_job_level + random_location + "&ibp=htl;jobs"
-                print(query)
+            
+            # Get AI-powered recommendations
+            recommendedJobs = get_ai_job_recommendations(
+                user["skills"],
+                user["job_levels"],
+                user["locations"]
+            )
+            
+            if not recommendedJobs:
+                return jsonify({
+                    "message": "No matching jobs found. Please update your profile with skills and preferences."
+                }), 200
 
-                # inner_div = mydivs[0].find("div", class_="KGjGe")
-                # if inner_div:
-                #     data_share_url = inner_div.get("data-share-url")
-                #     print(data_share_url)
-
-            else:
-                query = "https://www.google.com/search?q=" + "sde usa" + "&ibp=htl;jobs"
-
-            page = requests.get(query, headers=headers)
-            soup = BeautifulSoup(page.text, "html.parser")
-            # KGjGe - div class to get url
-            mydivs = soup.find_all("div", class_="PwjeAc")
-            for div in mydivs:
-                job = {}
-                inner_div = div.find("div", class_="KGjGe")
-                if inner_div:
-                    job["data-share-url"] = inner_div.get("data-share-url")
-                job["jobTitle"] = div.find(
-                    "div", {"class": "BjJfJf PUpOsf"}).text
-                print(job["jobTitle"])
-                job["companyName"] = div.find("div", {"class": "vNEEBe"}).text
-                job["location"] = div.find("div", {"class": "Qk80Jf"}).text
-                recommendedJobs.append(job)
-            print(recommendedJobs)
-            return jsonify(recommendedJobs)
+            return jsonify(recommendedJobs), 200
 
         except Exception as err:
-            print(err)
+            print(f"Error in getRecommendations: {str(err)}")
             return jsonify({"error": "Internal server error"}), 500
+    
+    # @app.route("/users/login", methods=["POST"])
+    # def login():
+    #     """
+    #     Logs in the user and creates a new authorization token and stores it in the database
+    #     """
+    #     try:
+    #         data = json.loads(request.data)
+
+    #         if "username" not in data or "password" not in data:
+    #             return jsonify({"error": "Missing username or password"}), 400
+
+    #         # Find user by username
+    #         user = Users.objects(username=data["username"]).first()
+    #         if not user:
+    #             print("❌ User not found:", data["username"])
+    #             return jsonify({"error": "User not found"}), 400
+
+    #         # Debug: Print stored and entered password hashes
+    #         entered_password_hash = hashlib.md5(data["password"].encode()).hexdigest()
+    #         print(f"🔍 Entered Hash: {entered_password_hash}")
+    #         print(f"🔍 Stored Hash: {user.password}")
+
+    #         # Compare hashed password
+    #         if user.password != entered_password_hash:
+    #             print("❌ Password does not match")
+    #             return jsonify({"error": "Wrong username or password"}), 400
+
+    #         # Generate session token
+    #         expiry = datetime.now() + timedelta(days=1)
+    #         expiry_str = expiry.strftime("%m/%d/%Y, %H:%M:%S")
+    #         token = f"{user.id}.{uuid.uuid4()}"
+
+    #         # Store token
+    #         user.authTokens.append({"token": token, "expiry": expiry_str})
+    #         user.save()
+
+    #         print("✅ Login successful")
+    #         return jsonify({
+    #             "message": "Login successful",
+    #             "token": token,
+    #             "expiry": expiry_str
+    #         }), 200
+
+    #     except Exception as e:
+    #         print("❌ Error in login:", e)
+    #         return jsonify({"error": "Internal server error"}), 500
 
     @app.route("/users/login", methods=["POST"])
     def login():
         """
-        Logs in the user and creates a new authorization token and stores in the database
-
-        :return: JSON object with status and message
+        Logs in the user and creates a new authorization token and stores it in the database
         """
         try:
-            try:
-                data = json.loads(request.data)
-                _ = data["username"]
-                _ = data["password"]
-            except:
-                return jsonify({"error": "Username or password missing"}), 400
-            password_hash = hashlib.md5(data["password"].encode()).hexdigest()
-            user = Users.objects(
-                username=data["username"], password=password_hash
-            ).first()
-            if user is None:
-                return jsonify({"error": "Wrong username or password"})
-            token = str(user["id"]) + "." + str(uuid.uuid4())
+            data = json.loads(request.data)
+
+            if "username" not in data or "password" not in data:
+                return jsonify({"error": "Missing username or password"}), 400
+
+            # Find user by username
+            user = Users.objects(username=data["username"]).first()
+            if not user:
+                return jsonify({"error": "User not found"}), 400
+
+            # Hash entered password and compare with stored password
+            entered_password_hash = hashlib.md5(data["password"].encode()).hexdigest()
+            if user.password != entered_password_hash:
+                return jsonify({"error": "Wrong username or password"}), 400
+
+            # Generate session token
             expiry = datetime.now() + timedelta(days=1)
             expiry_str = expiry.strftime("%m/%d/%Y, %H:%M:%S")
-            auth_tokens_new = user["authTokens"] + [
-                {"token": token, "expiry": expiry_str}
-            ]
-            user.update(authTokens=auth_tokens_new)
-            profileInfo = {
-                "id": user.id,
-                "fullName": user.fullName,
-                "institution": user.institution,
-                "skills": user.skills,
-                "phone_number": user.phone_number,
-                "address": user.address,
-                "locations": user.locations,
-                "jobLevels": user.job_levels,
-                "email": user.email
-            }
-            return jsonify({"profile": profileInfo, "token": token, "expiry": expiry_str})
-        except:
+            token = f"{user.id}.{uuid.uuid4()}"
+
+            # Store token
+            user.authTokens.append({"token": token, "expiry": expiry_str})
+            user.save()
+
+            # Return full profile in response
+            return jsonify({
+                "message": "Login successful",
+                "token": token,
+                "expiry": expiry_str,
+                "profile": {
+                    "id": user.id,
+                    "fullName": user.fullName,
+                    "username": user.username,
+                    "email": user.email,
+                    "phone_number": user.phone_number,
+                    "address": user.address,
+                    "institution": user.institution,
+                    "skills": user.skills,
+                    "job_levels": user.job_levels,
+                    "locations": user.locations
+                }
+            }), 200
+        except Exception as e:
+            print("Error in login:", e)
             return jsonify({"error": "Internal server error"}), 500
+
+
 
     @app.route("/users/logout", methods=["POST"])
     def logout():
@@ -429,75 +465,239 @@ def create_app():
     # search function
     # params:
     #   -keywords: string
-    @app.route("/search")
+    @app.route("/search", methods=["GET"])
     def search():
-        """
-        Searches the web and returns the job postings for the given search filters
+        try:
+            job_title = request.args.get('keywords', '')
+            if not job_title:
+                return jsonify({"error": "Job title is required"}), 400
 
-        :return: JSON object with job results
-        """
-        keywords = (
-            request.args.get("keywords")
-            if request.args.get("keywords")
-            else "random_test_keyword"
-        )
-        salary = request.args.get(
-            "salary") if request.args.get("salary") else ""
-        keywords = keywords.replace(" ", "+")
-        if keywords == "random_test_keyword":
-            return json.dumps({"label": str("successful test search")})
-        # create a url for a crawler to fetch job information
-        if salary:
-            url = (
-                "https://www.google.com/search?q="
-                + keywords
-                + "%20salary%20"
-                + salary
-                + "&ibp=htl;jobs"
+            prompt = f"""
+            Create a comprehensive career guide for a {job_title} role. Be specific to this role and provide detailed, practical information.
+            
+            Return a JSON object with the following structure:
+            {{
+                "roleOverview": "Detailed description specific to {job_title}, including day-to-day responsibilities, career progression, and industry impact",
+                
+                "technicalSkills": [
+                    {{
+                        "category": "Core Skills for {job_title}",
+                        "tools": ["List specific tools and technologies required"]
+                    }},
+                    {{
+                        "category": "Additional Technical Skills",
+                        "tools": ["List complementary skills that would be valuable"]
+                    }},
+                    {{
+                        "category": "Emerging Technologies",
+                        "tools": ["List new technologies relevant to this role"]
+                    }}
+                ],
+                
+                "softSkills": [
+                    "List 5-7 soft skills specifically important for {job_title}, with brief explanations"
+                ],
+                
+                "certifications": [
+                    {{
+                        "name": "Certification name specific to {job_title}",
+                        "provider": "Certification provider",
+                        "level": "Difficulty level",
+                        "description": "Why this certification is valuable for {job_title}"
+                    }}
+                ],
+                
+                "projectIdeas": [
+                    {{
+                        "title": "Project name relevant to {job_title}",
+                        "description": "Detailed project description showing relevant skills",
+                        "technologies": ["Required technologies"],
+                        "learningOutcomes": ["What you'll learn from this project"]
+                    }}
+                ],
+                
+                "industryTrends": [
+                    "List 5 current trends specifically affecting {job_title} roles"
+                ],
+                
+                "salaryRange": {{
+                    "entry": "Entry-level salary range for {job_title}",
+                    "mid": "Mid-level salary range for {job_title}",
+                    "senior": "Senior-level salary range for {job_title}",
+                    "factors": ["List factors that affect salary in this role"]
+                }},
+                
+                "learningResources": [
+                    {{
+                        "name": "Resource name specific to {job_title}",
+                        "type": "Course/Book/Tutorial/Workshop",
+                        "cost": "Free/Paid with approximate cost",
+                        "url": "Resource URL",
+                        "duration": "Estimated time to complete",
+                        "description": "What you'll learn from this resource"
+                    }}
+                ],
+                
+                "prerequisites": {{
+                    "education": ["Required/recommended education"],
+                    "experience": ["Required/recommended experience"],
+                    "skills": ["Must-have skills before starting"]
+                }},
+                
+                "careerPath": {{
+                    "entryLevel": "Entry-level positions",
+                    "midLevel": "Mid-level positions",
+                    "senior": "Senior-level positions",
+                    "advancement": ["Possible career advancement paths"]
+                }}
+            }}
+            
+            Ensure all information is:
+            1. Specific to the {job_title} role
+            2. Current and industry-relevant
+            3. Detailed and actionable
+            4. Realistic and practical
+            """
+
+        # Rest of the code remains the same...
+
+            headers = {
+                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": "gpt-3.5-turbo",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are a career advisor. Return only JSON without any markdown formatting."
+                    },
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": 0.7,
+                "response_format": { "type": "json_object" }
+            }
+
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json=data
             )
-        else:
-            url = "https://www.google.com/search?q=" + keywords + "&ibp=htl;jobs"
 
-        print(user_agent.random)
-        headers = {"User-Agent":
-                   #    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"
-                   user_agent.random,
-                   "Referrer": "https://www.google.com/"
-                   }
+            if response.status_code == 200:
+                result = response.json()
+                content = result['choices'][0]['message']['content']
+                
+                # Clean the content string
+                content = content.strip()
+                if content.startswith('```json'):
+                    content = content[7:]
+                if content.startswith('```'):
+                    content = content[3:]
+                if content.endswith('```'):
+                    content = content[:-3]
+                
+                # Parse the JSON content
+                insights = json.loads(content.strip())
+                
+                # Return the parsed JSON directly
+                return jsonify(insights), 200
+            else:
+                return jsonify({"error": "Failed to get insights"}), 500
 
-        page = requests.get(url, headers=headers)
-        soup = BeautifulSoup(page.text, "html.parser")
+        except Exception as e:
+            print(f"Error in search: {str(e)}")
+            return jsonify({"error": "Internal server error"}), 500
+            
+    @app.route("/search", methods=["GET"])
+    def search_jobs():
+        try:
+            job_title = request.args.get('keywords', '')
+            if not job_title:
+                return jsonify({"error": "Job title is required"}), 400
 
-        # parsing searching results to DataFrame and return
-        df = pd.DataFrame(
-            columns=["jobTitle", "companyName", "location", "date", "qualifications", "responsibilities", "benefits"])
-        mydivs = soup.find_all("div", class_="PwjeAc")
+            # Create detailed prompt for job insights
+            prompt = f"""
+                Provide comprehensive insights for the role: {job_title}
 
-        for i, div in enumerate(mydivs):
-            df.at[i, "jobTitle"] = div.find(
-                "div", {"class": "BjJfJf PUpOsf"}).text
-            df.at[i, "companyName"] = div.find("div", {"class": "vNEEBe"}).text
-            df.at[i, "location"] = div.find("div", {"class": "Qk80Jf"}).text
-            df.at[i, "date"] = div.find_all(
-                "span", {"class": "LL4CDc"}, limit=1)[0].text
+                Return a JSON object with this exact structure:
+                {{
+                    "roleOverview": "string describing the role",
+                    "technicalSkills": [
+                        {{
+                            "category": "category name",
+                            "tools": ["tool1", "tool2"]
+                        }}
+                    ],
+                    "softSkills": ["skill1", "skill2"],
+                    "certifications": [
+                        {{
+                            "name": "cert name",
+                            "provider": "provider name",
+                            "level": "difficulty level"
+                        }}
+                    ],
+                    "projectIdeas": [
+                        {{
+                            "title": "project name",
+                            "description": "project description",
+                            "technologies": ["tech1", "tech2"]
+                        }}
+                    ],
+                    "industryTrends": ["trend1", "trend2"],
+                    "salaryRange": {{
+                        "entry": "entry level range",
+                        "mid": "mid level range",
+                        "senior": "senior level range"
+                    }},
+                    "learningResources": [
+                        {{
+                            "name": "resource name",
+                            "type": "resource type",
+                            "cost": "free/paid",
+                            "url": "resource url"
+                        }}
+                    ]
+                }}
+                """
 
-            # Collect Job Description Details
-            desc = div.find_all("div", {"class": "JxVj3d"})
-            for ele in desc:
-                arr = list(x.text for x in ele.find_all(
-                    "div", {"class": "nDgy9d"}))
-                title = ele.find("div", {"class": "iflMsb"}).text
-                if arr:
-                    df.at[i, str(title).lower()] = arr
-        missingCols = list(
-            (df.loc[:, df.isnull().sum(axis=0).astype(bool)]).columns)
+            # OpenAI API call
+            headers = {
+                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": "gpt-3.5-turbo",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are a career advisor and industry expert providing detailed insights about tech roles."
+                    },
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": 0.7,
+                "response_format": { "type": "json_object" }
+            }
 
-        for col in missingCols:
-            df.loc[df[col].isnull(), [col]] = df.loc[df[col].isnull(
-            ), col].apply(lambda x: [])
-        # df.loc[df["benefits"].isnull(), ["benefits"]] = df.loc[df["benefits"].isnull(), "benefits"].apply(lambda x: [])
-        return jsonify(df.to_dict("records"))
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json=data
+            )
 
+            if response.status_code == 200:
+                result = response.json()
+                insights = json.loads(result['choices'][0]['message']['content'])
+                return jsonify(insights), 200
+            else:
+                return jsonify({"error": "Failed to get insights"}), 500
+
+        except Exception as e:
+            print(f"Error in search: {str(e)}")
+            return jsonify({"error": "Internal server error"}), 500
+    
     # get data from the CSV file for rendering root page
     @app.route("/applications", methods=["GET"])
     def get_data():
@@ -617,7 +817,6 @@ def create_app():
         except:
             return jsonify({"error": "Internal server error"}), 500
 
-
     @app.route("/resume", methods=["POST"])
     def upload_resume():
         """
@@ -681,97 +880,188 @@ def create_app():
             return response, 200
         except:
             return jsonify({"error": "Internal server error"}), 500
-
-    @app.route("/profilePhoto", methods=["POST"])
-    def upload_profile_photo():
-        """
-        Uploads or updates the profile photo for the user.
-        The file should be sent with the form field 'profilePhoto'.
-        """
+    
+    @app.route("/parse-resume", methods=["POST"])
+    def parse_resume():
         try:
-            userid = get_userid_from_header()
-            try:
-                file = request.files["profilePhoto"]
-            except:
-                return jsonify({"error": "No profile photo file found in the input"}), 400
+            resume_file = request.files['resume']
+            # Use a PDF parsing library like PyPDF2 or pdfplumber to extract text
+            # For this example, we'll use PyPDF2
+            from PyPDF2 import PdfReader
+            
+            reader = PdfReader(resume_file)
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text()
 
-            user = Users.objects(id=userid).first()
-            try:
-                if not user.profilePhoto.read():
-                    user.profilePhoto.put(file, filename=file.filename, content_type=file.content_type)
-                    user.save()
-                    return jsonify({"message": "Profile photo successfully uploaded"}), 200
-                else:
-                    user.profilePhoto.replace(file, filename=file.filename, content_type=file.content_type)
-                    user.save()
-                    return jsonify({"message": "Profile photo successfully replaced"}), 200
-            except Exception as inner_e:
-                user.profilePhoto.put(file, filename=file.filename, content_type=file.content_type)
-                user.save()
-                return jsonify({"message": "Profile photo successfully uploaded"}), 200
-        except Exception as e:
-            print(e)
-            return jsonify({"error": "Internal server error"}), 500
-
-    @app.route("/profilePhoto", methods=["GET"])
-    def get_profile_photo_url():
-        """
-        Returns the URL for accessing the user's profile photo.
-        The returned URL points to the '/profilePhoto/file' endpoint.
-        """
-        try:
-            userid = get_userid_from_header()
-            user = Users.objects(id=userid).first()
-            if not user.profilePhoto or not user.profilePhoto.read():
-                return jsonify({"error": "No profile photo found"}), 404
-            user.profilePhoto.seek(0)
-            photo_url = url_for("serve_profile_photo", _external=True)
-            return jsonify({"url": photo_url}), 200
-        except Exception as e:
-            print(e)
-            return jsonify({"error": "Internal server error"}), 500
-
-    @app.route("/profilePhoto/file", methods=["GET"])
-    def serve_profile_photo():
-        """
-        Serves the actual profile photo file.
-        """
-        try:
-            userid = get_userid_from_header()
-            user = Users.objects(id=userid).first()
-            if not user.profilePhoto or not user.profilePhoto.read():
-                return jsonify({"error": "No profile photo found"}), 404
-            user.profilePhoto.seek(0)
-            filename = user.profilePhoto.filename
-            content_type = user.profilePhoto.contentType if user.profilePhoto.contentType else "application/octet-stream"
-            response = send_file(
-                user.profilePhoto,
-                mimetype=content_type,
-                download_name=filename,
-                as_attachment=True,
+            # Use GPT to structure the resume content
+            headers = {
+                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+                "Content-Type": "application/json"
+            }
+            
+            prompt = f"""
+            Parse this resume text and extract key information in JSON format:
+            {text}
+            
+            Return format:
+            {{
+                "skills": ["skill1", "skill2"],
+                "experience": ["exp1", "exp2"],
+                "education": ["edu1", "edu2"],
+                "certifications": ["cert1", "cert2"]
+            }}
+            """
+            
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json={
+                    "model": "gpt-3.5-turbo",
+                    "messages": [
+                        {"role": "system", "content": "You are a resume parser."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.7
+                }
             )
-            response.headers["x-filename"] = filename
-            response.headers["Access-Control-Expose-Headers"] = "x-filename"
-            return response, 200
+            
+            parsed_resume = response.json()['choices'][0]['message']['content']
+            return jsonify(json.loads(parsed_resume))
+
         except Exception as e:
-            print(e)
+            print(f"Error parsing resume: {str(e)}")
+            return jsonify({"error": "Failed to parse resume"}), 500
+
+    @app.route("/compare-resume", methods=["POST"])
+    def compare_resume():
+        try:
+            data = request.json
+            resume = data['resume']
+            job_insights = data['jobInsights']
+            
+            # Use GPT to compare resume with job requirements
+            headers = {
+                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+                "Content-Type": "application/json"
+            }
+            
+            prompt = f"""
+            Compare this resume with the job requirements and provide a detailed analysis:
+            Resume: {json.dumps(resume)}
+            Job Requirements: {json.dumps(job_insights)}
+            
+            Return format:
+            {{
+                "overallMatch": percentage,
+                "matchingSkills": ["skill1", "skill2"],
+                "missingSkills": ["skill1", "skill2"],
+                "recommendations": ["rec1", "rec2"]
+            }}
+            """
+            
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json={
+                    "model": "gpt-3.5-turbo",
+                    "messages": [
+                        {"role": "system", "content": "You are a resume analyzer."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.7
+                }
+            )
+            
+            comparison = response.json()['choices'][0]['message']['content']
+            return jsonify(json.loads(comparison))
+
+        except Exception as e:
+            print(f"Error comparing resume: {str(e)}")
+            return jsonify({"error": "Failed to compare resume"}), 500
+        
+    @app.errorhandler(404)
+    def page_not_found(error):  # Add error parameter
+        """
+        Returns a json object to indicate error 404
+
+        :return: JSON object
+        """
+        return jsonify({"error": "Not Found"}), 404
+    
+    @app.route("/analyses", methods=["GET"])
+    def get_analyses():
+        """
+        Gets user's saved analyses from the database
+        """
+        try:
+            userid = get_userid_from_header()
+            user = Users.objects(id=userid).first()
+            
+            if not hasattr(user, 'analyses'):
+                return jsonify([])
+                
+            return jsonify(user.analyses)
+        except Exception as e:
+            print(f"Error getting analyses: {str(e)}")
+            return jsonify({"error": "Internal server error"}), 500
+
+    @app.route("/analyses", methods=["POST"]) 
+    def save_analysis():
+        """
+        Saves a new analysis to the user's profile
+        """
+        try:
+            userid = get_userid_from_header()
+            user = Users.objects(id=userid).first()
+            
+            analysis = json.loads(request.data)
+            
+            if not hasattr(user, 'analyses'):
+                user.analyses = []
+                
+            user.analyses.append(analysis)
+            user.save()
+            
+            return jsonify({"message": "Analysis saved successfully"}), 200
+        except Exception as e:
+            print(f"Error saving analysis: {str(e)}")
             return jsonify({"error": "Internal server error"}), 500
 
     return app
 
+
 app = create_app()
 
 
+# with open("application.yml") as f:
+#     info = yaml.load(f, Loader=yaml.FullLoader)
+#     username = info["USERNAME"]
+#     password = info["PASSWORD"]
+#     cluster_url = info["CLUSTER_URL"]
+#     # ca=certifi.where()
+#     app.config["MONGODB_SETTINGS"] = {
+#         "db": "appTracker",
+#         "host": f"mongodb+srv://{username}:{password}@{cluster_url}/",
+#     }
+
+# username = "test_user"
+# password = "test_pass"
+# cluster_url = "localhost"
+
 with open("application.yml") as f:
     info = yaml.load(f, Loader=yaml.FullLoader)
-    username = info["USERNAME"]
-    password = info["PASSWORD"]
-    cluster_url = info["CLUSTER_URL"]
-    # ca=certifi.where()
-    app.config["MONGODB_SETTINGS"] = {
-        "db": "appTracker",
-        "host": f"mongodb+srv://aranya:psswrd@cs510-ats.0pmne.mongodb.net/",
-    }
+
+MONGO_USERNAME = info.get("USERNAME", "default_user")
+MONGO_PASSWORD = info.get("PASSWORD", "default_pass")
+MONGO_CLUSTER = info.get("CLUSTER_URL", "cluster0.jmi6a.mongodb.net")
+
+app.config["MONGODB_SETTINGS"] = {
+    "db": "appTracker",
+    "host": f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_CLUSTER}/appTracker?retryWrites=true&w=majority",
+}
+
+
 db = MongoEngine()
 db.init_app(app)
 
@@ -780,7 +1070,6 @@ class Users(db.Document):
     """
     Users class. Holds full name, username, password, as well as applications and resumes
     """
-
     id = db.IntField(primary_key=True)
     fullName = db.StringField()
     username = db.StringField()
@@ -789,13 +1078,13 @@ class Users(db.Document):
     email = db.StringField()
     applications = db.ListField()
     resume = db.FileField()
-    profilePhoto = db.FileField()
     skills = db.ListField()
     job_levels = db.ListField()
     locations = db.ListField()
     institution = db.StringField()
     phone_number = db.StringField()
     address = db.StringField()
+    analyses = db.ListField()  # Add analyses field
 
     def to_json(self):
         """
@@ -853,4 +1142,4 @@ def get_new_application_id(user_id):
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5001)
+    app.run(host='0.0.0.0', port=5000)
