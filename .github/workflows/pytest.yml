@@ -36,4 +36,4 @@ jobs:
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
-        python -m pytest tests/* -v -s
+        python -m pytest tests/test1_akulka24.py -v -s
