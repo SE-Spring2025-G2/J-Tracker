@@ -69,6 +69,13 @@ jobs:
       run: |
         python -m pytest tests/test5_akulka24.py -v -s --junitxml=test5-report.xml
 
+    - name: Run test6 (API Key Check)
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        python -m pytest tests/test6_akulka24.py -v -s --junitxml=test6-report.xml
+
     - name: Upload Test 1 Results
       if: always()  # This ensures the step runs even if tests fail
       uses: actions/upload-artifact@v4
@@ -108,3 +115,10 @@ jobs:
         name: test5-results
         path: test5-report.xml
         retention-days: 30
+
+    - name: Upload Test 6 Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test6-results
+        path: test6-report.xml
