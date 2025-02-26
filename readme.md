@@ -179,7 +179,7 @@ mongodb
 
 - Recommended: Use a GUI such as [Studio 3T](https://studio3t.com/download/) to more easily interact with the database
 
-### Hosted database with MongoDB Atlas:
+### Hosted database with MongoDB Atlas: 
 
 1. [Create account](https://account.mongodb.com/account/register) for MongoDB
 
