@@ -12,7 +12,7 @@ from flask_mongoengine import MongoEngine
 from flask_cors import CORS, cross_origin
 
 from bs4 import BeautifulSoup
-
+import os
 from fake_useragent import UserAgent
 import pandas as pd
 from jobsearch import get_ai_job_recommendations
@@ -562,7 +562,7 @@ def create_app():
         # Rest of the code remains the same...
 
             headers = {
-                "Authorization": "Bearer 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",
+                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
                 "Content-Type": "application/json"
             }
             
@@ -664,7 +664,7 @@ def create_app():
 
             # OpenAI API call
             headers = {
-                "Authorization": "Bearer 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",
+                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
                 "Content-Type": "application/json"
             }
             
@@ -896,7 +896,7 @@ def create_app():
 
             # Use GPT to structure the resume content
             headers = {
-                "Authorization": "Bearer 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",
+                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
                 "Content-Type": "application/json"
             }
             
@@ -942,7 +942,7 @@ def create_app():
             
             # Use GPT to compare resume with job requirements
             headers = {
-                "Authorization": "Bearer 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",
+                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
                 "Content-Type": "application/json"
             }
             
@@ -979,6 +979,54 @@ def create_app():
         except Exception as e:
             print(f"Error comparing resume: {str(e)}")
             return jsonify({"error": "Failed to compare resume"}), 500
+        
+    @app.errorhandler(404)
+    def page_not_found(error):  # Add error parameter
+        """
+        Returns a json object to indicate error 404
+
+        :return: JSON object
+        """
+        return jsonify({"error": "Not Found"}), 404
+    
+    @app.route("/analyses", methods=["GET"])
+    def get_analyses():
+        """
+        Gets user's saved analyses from the database
+        """
+        try:
+            userid = get_userid_from_header()
+            user = Users.objects(id=userid).first()
+            
+            if not hasattr(user, 'analyses'):
+                return jsonify([])
+                
+            return jsonify(user.analyses)
+        except Exception as e:
+            print(f"Error getting analyses: {str(e)}")
+            return jsonify({"error": "Internal server error"}), 500
+
+    @app.route("/analyses", methods=["POST"]) 
+    def save_analysis():
+        """
+        Saves a new analysis to the user's profile
+        """
+        try:
+            userid = get_userid_from_header()
+            user = Users.objects(id=userid).first()
+            
+            analysis = json.loads(request.data)
+            
+            if not hasattr(user, 'analyses'):
+                user.analyses = []
+                
+            user.analyses.append(analysis)
+            user.save()
+            
+            return jsonify({"message": "Analysis saved successfully"}), 200
+        except Exception as e:
+            print(f"Error saving analysis: {str(e)}")
+            return jsonify({"error": "Internal server error"}), 500
 
     return app
 
@@ -1022,7 +1070,6 @@ class Users(db.Document):
     """
     Users class. Holds full name, username, password, as well as applications and resumes
     """
-
     id = db.IntField(primary_key=True)
     fullName = db.StringField()
     username = db.StringField()
@@ -1037,6 +1084,7 @@ class Users(db.Document):
     institution = db.StringField()
     phone_number = db.StringField()
     address = db.StringField()
+    analyses = db.ListField()  # Add analyses field
 
     def to_json(self):
         """

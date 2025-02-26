@@ -52,35 +52,53 @@ const ProfilePage = (props) => {
 	}
 
 	useEffect(() => {
-		// Load past analyses from localStorage when component mounts
-		const savedAnalyses = localStorage.getItem('pastAnalyses');
-		if (savedAnalyses) {
-			setPastAnalyses(JSON.parse(savedAnalyses));
-		}
+		// Fetch past analyses from backend
+		const fetchAnalyses = async () => {
+			try {
+				const response = await fetch('http://127.0.0.1:5000/analyses', {
+					headers: {
+						'Authorization': 'Bearer ' + localStorage.getItem('token'),
+						'Access-Control-Allow-Origin': 'http://127.0.0.1:3000',
+						'Access-Control-Allow-Credentials': 'true'
+					}
+				});
+				
+				if (!response.ok) {
+					throw new Error('Failed to fetch analyses');
+				}
+				
+				const data = await response.json();
+				setPastAnalyses(data);
+			} catch (error) {
+				console.error('Error fetching analyses:', error);
+			}
+		};
 
-		// Fetch applications and count by status
-		fetch('http://127.0.0.1:5000/applications', {
-			headers: {
-				'Authorization': 'Bearer ' + localStorage.getItem('token'),
-				'Access-Control-Allow-Origin': 'http://127.0.0.1:3000',
-				'Access-Control-Allow-Credentials': 'true'
-			},
-			method: 'GET'
-		})
-		.then(response => response.json())
-		.then(data => {
-			setApplicationCount(data.length);
+		// Fetch applications and analyses
+		Promise.all([
+			fetch('http://127.0.0.1:5000/applications', {
+				headers: {
+					'Authorization': 'Bearer ' + localStorage.getItem('token'),
+					'Access-Control-Allow-Origin': 'http://127.0.0.1:3000',
+					'Access-Control-Allow-Credentials': 'true'
+				}
+			}),
+			fetchAnalyses()
+		])
+		.then(async ([applicationsResponse]) => {
+			const applicationsData = await applicationsResponse.json();
+			setApplicationCount(applicationsData.length);
 			// Count applications by status
 			const counts = {
-				applied: data.filter(app => app.status === '3').length,
-				rejected: data.filter(app => app.status === '4').length,
-				waitingReferral: data.filter(app => app.status === '2').length,
-				wishList: data.filter(app => app.status === '1').length
+				applied: applicationsData.filter(app => app.status === '3').length,
+				rejected: applicationsData.filter(app => app.status === '4').length,
+				waitingReferral: applicationsData.filter(app => app.status === '2').length,
+				wishList: applicationsData.filter(app => app.status === '1').length
 			};
 			setApplicationsByStatus(counts);
 		})
 		.catch(error => {
-			console.error('Error fetching applications:', error);
+			console.error('Error fetching data:', error);
 		});
 	}, []);
 
@@ -343,7 +361,7 @@ const ProfilePage = (props) => {
 				<div className='col-4'>
 					<div className='card' style={{ 
 						boxShadow: '0px 5px 12px 0px rgba(0,0,0,0.1)',
-						height: 'calc(100vh - 40px)',  // Adjusted height
+						height: 'calc(100vh - 40px)',
 						overflowY: 'auto'
 					}}>
 						<div className='card-body p-4'>
@@ -352,23 +370,65 @@ const ProfilePage = (props) => {
 							</div>
 							
 							{selectedAnalysis && (
-								<div className="alert alert-info d-flex justify-content-between align-items-center mb-4">
-									<span>
-										Viewing analysis for "{selectedAnalysis.searchTerm}" from {selectedAnalysis.date}
-									</span>
-									<button 
-										className="btn btn-sm btn-outline-info"
-										onClick={() => setSelectedAnalysis(null)}
-									>
-										Hide Details
-									</button>
-								</div>
-							)}
-
-							{selectedAnalysis && (
-								<div className="mb-4">
-									<h5>Match Details</h5>
-									<p>Overall Match: {selectedAnalysis.comparison.overallMatch}%</p>
+								<div className="alert alert-info mb-4">
+									<div className="d-flex justify-content-between align-items-center mb-3">
+										<span>
+											Analysis for "{selectedAnalysis.searchTerm}"
+										</span>
+										<button 
+											className="btn btn-sm btn-outline-info"
+											onClick={() => setSelectedAnalysis(null)}
+										>
+											Hide Details
+										</button>
+									</div>
+									<small className="d-block text-muted mb-3">
+										Analyzed on {selectedAnalysis.date}
+									</small>
+									
+									<div className="card">
+										<div className="card-body">
+											<h6>Match Overview</h6>
+											<div className="progress mb-3">
+												<div 
+													className="progress-bar" 
+													role="progressbar" 
+													style={{ 
+														width: `${selectedAnalysis.comparison.overallMatch}%`,
+														backgroundColor: '#296E85'
+													}}
+													aria-valuenow={selectedAnalysis.comparison.overallMatch} 
+													aria-valuemin="0" 
+													aria-valuemax="100"
+												>
+													{selectedAnalysis.comparison.overallMatch}%
+												</div>
+											</div>
+											
+											<div className="row g-3">
+												<div className="col-6">
+													<h6>Matching Skills</h6>
+													<ul className="list-group list-group-flush">
+														{selectedAnalysis.comparison.matchingSkills.map((skill, index) => (
+															<li key={index} className="list-group-item text-success">
+																<i className="fas fa-check-circle me-2"></i>{skill}
+															</li>
+														))}
+													</ul>
+												</div>
+												<div className="col-6">
+													<h6>Missing Skills</h6>
+													<ul className="list-group list-group-flush">
+														{selectedAnalysis.comparison.missingSkills.map((skill, index) => (
+															<li key={index} className="list-group-item text-danger">
+																<i className="fas fa-times-circle me-2"></i>{skill}
+															</li>
+														))}
+													</ul>
+												</div>
+											</div>
+										</div>
+									</div>
 								</div>
 							)}
 
@@ -382,18 +442,33 @@ const ProfilePage = (props) => {
 										onClick={() => setSelectedAnalysis(
 											selectedAnalysis?.id === analysis.id ? null : analysis
 										)}
+										style={{
+											borderRadius: '8px',
+											border: '1px solid #dee2e6'
+										}}
 									>
-										<div className="d-flex w-100 justify-content-between">
-											<h5 className="mb-2">{analysis.searchTerm}</h5>
-											<small>{analysis.date}</small>
+										<div className="d-flex w-100 justify-content-between align-items-center">
+											<h5 className="mb-1">{analysis.searchTerm}</h5>
+											<span className={`badge ${
+												analysis.comparison.overallMatch >= 70 ? 'bg-success' :
+												analysis.comparison.overallMatch >= 40 ? 'bg-warning' :
+												'bg-danger'
+											}`}>
+												{analysis.comparison.overallMatch}% Match
+											</span>
 										</div>
-										<p className="mb-1">Match: {analysis.comparison.overallMatch}%</p>
+										<small className="text-muted">{analysis.date}</small>
 									</button>
 								))}
 							</div>
 
 							{pastAnalyses.length === 0 && (
-								<p className="text-muted text-center mt-4">No analyses yet. Try searching for jobs to see matches!</p>
+								<div className="text-center mt-4">
+									<p className="text-muted">No analyses yet</p>
+									<p className="small text-muted">
+										Try searching for jobs to see how well your profile matches!
+									</p>
+								</div>
 							)}
 						</div>
 					</div>

@@ -26,11 +26,8 @@ def get_ai_job_recommendations(skills, job_levels, locations):
         Ensure the response is valid JSON format and each job matches the candidate's skills and experience level.
         """
 
-        # Use your OpenAI API key
-        api_key = "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"  # Replace with your actual API key
-        
         headers = {
-            "Authorization": f"Bearer {api_key}",
+            "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
             "Content-Type": "application/json"
         }
         
