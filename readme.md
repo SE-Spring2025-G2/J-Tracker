@@ -100,10 +100,10 @@ Users can add or update information to their profile, such as their personal inf
 
 
 
-<p align="center"><img width="700" src="./resources/new_dashboard.png"></p> 
-<p align="center"><img width="700" src="./resources/new_dashboard2.png"></p>
-<p align="center"><img width="700" src="./resources/match_analysis.png"></p>
-<p align="center"><img width="700" src="./resources/Job_sight.png"></p>
+<p align="center"><img width="700" src="https://github.com/ncsu-csc-510/Project2/blob/main/media/media1.png"></p> 
+<p align="center"><img width="700" src="https://github.com/ncsu-csc-510/Project2/blob/main/media/media2.png"></p>
+<p align="center"><img width="700" src="https://github.com/ncsu-csc-510/Project2/blob/main/media/media3.png"></p>
+<p align="center"><img width="700" src="https://github.com/ncsu-csc-510/Project2/blob/main/media/media4.png"></p>
 <p align="center"><img width="700" src="./resources/Job_sights.png"></p>
 
 
@@ -122,7 +122,7 @@ Here, user is able to see different jobs which would be recommended to them acco
 
 ### FinalViewOfDashboard
 
-<p align="center"><img width="700" src="./resources/Final_Dashboard.png"></p>
+<p align="center"><img width="700" src="https://github.com/ncsu-csc-510/Project2/blob/main/media/media5.png"></p>
 
 
 ## Future Scope:
