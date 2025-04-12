@@ -15,7 +15,8 @@ from bs4 import BeautifulSoup
 import os
 from fake_useragent import UserAgent
 import pandas as pd
-from jobsearch import get_ai_job_recommendations
+from .jobsearch import get_ai_job_recommendations
+from pypdf import PdfReader
 
 import yaml
 
@@ -53,6 +54,9 @@ def create_app():
     with open("application.yml") as f:
         info = yaml.load(f, Loader=yaml.FullLoader)
         app.secret_key = info.get("SECRET_KEY", "default_secret_key")  # Use a default value if not found
+        # GOOGLE_CLIENT_ID = info["GOOGLE_CLIENT_ID"]
+        # GOOGLE_CLIENT_SECRET = info["GOOGLE_CLIENT_SECRET"]
+        # CONF_URL = info["CONF_URL"]
 
 
     app.config["CORS_HEADERS"] = "Content-Type"
@@ -885,12 +889,13 @@ def create_app():
     def parse_resume():
         try:
             resume_file = request.files['resume']
+            print(f"Trying to read the resume!")
             # Use a PDF parsing library like PyPDF2 or pdfplumber to extract text
             # For this example, we'll use PyPDF2
-            from PyPDF2 import PdfReader
             
             reader = PdfReader(resume_file)
             text = ""
+            print(f"The resume has been read!")
             for page in reader.pages:
                 text += page.extract_text()
 
@@ -925,6 +930,8 @@ def create_app():
                     "temperature": 0.7
                 }
             )
+
+            print(f"The API call has been sent and received: {parsed_resume}")
             
             parsed_resume = response.json()['choices'][0]['message']['content']
             return jsonify(json.loads(parsed_resume))
@@ -1144,7 +1151,7 @@ MONGO_CLUSTER = info.get("CLUSTER_URL", "cluster0.jmi6a.mongodb.net")
 
 app.config["MONGODB_SETTINGS"] = {
     "db": "appTracker",
-    "host": f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_CLUSTER}/appTracker?retryWrites=true&w=majority",
+    "host": f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@cluster0.giavamz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
 }
 
 
