@@ -26,7 +26,7 @@ flask-mongoengine==1.0.0
 Flask-Script==2.0.6
 flask-wtf==1.2.1
 gast==0.3.3
-google-auth==1.23.0
+# google-auth==1.23.0 #removing this dependency to solve for google-generativeai
 google-auth-oauthlib==0.4.2
 google-pasta==0.2.0
 grpcio==1.33.2
@@ -63,7 +63,7 @@ pexpect==4.8.0
 pickleshare==0.7.5
 Pillow==8.1.0
 prompt-toolkit==3.0.8
-protobuf==3.14.0
+# protobuf==3.20.0 #removing this dependency to solve for google-generativeai
 ptyprocess==0.6.0
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
@@ -98,3 +98,4 @@ wrapt==1.12.1
 wtforms==3.1.0
 z3-solver==4.8.12.0
 zipp==3.17.0
+google-generativeai

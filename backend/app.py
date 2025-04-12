@@ -17,11 +17,9 @@ from fake_useragent import UserAgent
 import pandas as pd
 from .jobsearch import get_ai_job_recommendations
 from pypdf import PdfReader
-
+import google.generativeai as genai
 import yaml
-
-
-
+import re
 import requests
 
 from authlib.integrations.flask_client import OAuth
@@ -54,9 +52,9 @@ def create_app():
     with open("application.yml") as f:
         info = yaml.load(f, Loader=yaml.FullLoader)
         app.secret_key = info.get("SECRET_KEY", "default_secret_key")  # Use a default value if not found
-        # GOOGLE_CLIENT_ID = info["GOOGLE_CLIENT_ID"]
-        # GOOGLE_CLIENT_SECRET = info["GOOGLE_CLIENT_SECRET"]
-        # CONF_URL = info["CONF_URL"]
+        GOOGLE_CLIENT_ID = info["GOOGLE_CLIENT_ID"]
+        GOOGLE_CLIENT_SECRET = info["GOOGLE_CLIENT_SECRET"]
+        CONF_URL = info["CONF_URL"]
 
 
     app.config["CORS_HEADERS"] = "Content-Type"
@@ -899,14 +897,20 @@ def create_app():
             for page in reader.pages:
                 text += page.extract_text()
 
-            # Use GPT to structure the resume content
-            headers = {
-                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
-                "Content-Type": "application/json"
-            }
+            # Use Gemini to structure the resume content
+            api_key = os.getenv('GEMINI_API_KEY')
+            if not api_key:
+                return jsonify({"error": "GEMINI_API_KEY not set in .env"}), 500
+            
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-2.0-flash')
+            # headers = {
+            #     "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+            #     "Content-Type": "application/json"
+            # }
             
             prompt = f"""
-            Parse this resume text and extract key information in JSON format:
+            Parse this resume text and extract key information in JSON format. Enter pure JSON without any extra characters or pretty formatting:
             {text}
             
             Return format:
@@ -918,23 +922,38 @@ def create_app():
             }}
             """
             
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json={
-                    "model": "gpt-3.5-turbo",
-                    "messages": [
-                        {"role": "system", "content": "You are a resume parser."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    "temperature": 0.7
-                }
-            )
+            #replacing earlier ChatGPT call with Gemini-2.0-flash
+            # response = requests.post(
+            #     "https://api.openai.com/v1/chat/completions",
+            #     headers=headers,
+            #     json={
+            #         "model": "gpt-3.5-turbo",
+            #         "messages": [
+            #             {"role": "system", "content": "You are a resume parser."},
+            #             {"role": "user", "content": prompt}
+            #         ],
+            #         "temperature": 0.7
+            #     }
+            # )
 
-            print(f"The API call has been sent and received: {parsed_resume}")
+            response = model.generate_content(prompt)
+
+            """
+            Printing the output to see if the LLM answers with any extra characters or formatting to then remove it using RE
+            """
+            print(f"The API call has been sent and received: {response.text}")
+
+            output = response.text
+            output = re.sub(r'```json\n', '', output)
+            output = re.sub(r'```', '', output)
+
+            try:
+                parsed_resume = json.loads(output)
+                return jsonify(parsed_resume)
             
-            parsed_resume = response.json()['choices'][0]['message']['content']
-            return jsonify(json.loads(parsed_resume))
+            except json.JSONDecodeError:
+                print(f"Error: Gemini response was not valid JSON: {output}")
+                return jsonify({"error": "Gemini response was not valid JSON"}), 500
 
         except Exception as e:
             print(f"Error parsing resume: {str(e)}")
