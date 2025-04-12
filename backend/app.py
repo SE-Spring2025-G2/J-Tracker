@@ -467,12 +467,19 @@ def create_app():
     # search function
     # params:
     #   -keywords: string
-    @app.route("/search", methods=["GET"])
+    @app.route("/fake-job", methods=["GET"])
     def search():
         try:
             job_title = request.args.get('keywords', '')
             if not job_title:
                 return jsonify({"error": "Job title is required"}), 400
+            
+            api_key = os.getenv('GEMINI_API_KEY')
+            if not api_key:
+                return jsonify({"error": "GEMINI_API_KEY not set in .env"}), 500
+            
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-2.0-flash')
 
             prompt = f"""
             Create a comprehensive career guide for a {job_title} role. Be specific to this role and provide detailed, practical information.
@@ -561,53 +568,52 @@ def create_app():
             4. Realistic and practical
             """
 
-        # Rest of the code remains the same...
+        # replacing earlier ChatGPT call with Gemini-2.0-flash
 
-            headers = {
-                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
-                "Content-Type": "application/json"
-            }
+            # headers = {
+            #     "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+            #     "Content-Type": "application/json"
+            # }
             
-            data = {
-                "model": "gpt-3.5-turbo",
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "You are a career advisor. Return only JSON without any markdown formatting."
-                    },
-                    {"role": "user", "content": prompt}
-                ],
-                "temperature": 0.7,
-                "response_format": { "type": "json_object" }
-            }
+            # data = {
+            #     "model": "gpt-3.5-turbo",
+            #     "messages": [
+            #         {
+            #             "role": "system",
+            #             "content": "You are a career advisor. Return only JSON without any markdown formatting."
+            #         },
+            #         {"role": "user", "content": prompt}
+            #     ],
+            #     "temperature": 0.7,
+            #     "response_format": { "type": "json_object" }
+            # }
 
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json=data
-            )
+            # response = requests.post(
+            #     "https://api.openai.com/v1/chat/completions",
+            #     headers=headers,
+            #     json=data
+            # )
+            
+            #Gemini API call
+            response = model.generate_content(prompt)
 
-            if response.status_code == 200:
-                result = response.json()
-                content = result['choices'][0]['message']['content']
-                
-                # Clean the content string
-                content = content.strip()
-                if content.startswith('```json'):
-                    content = content[7:]
-                if content.startswith('```'):
-                    content = content[3:]
-                if content.endswith('```'):
-                    content = content[:-3]
-                
-                # Parse the JSON content
-                insights = json.loads(content.strip())
-                
-                # Return the parsed JSON directly
-                return jsonify(insights), 200
-            else:
-                return jsonify({"error": "Failed to get insights"}), 500
+            output = response.text
+            output = re.sub(r'```json\n', '', output)
+            output = re.sub(r'```', '', output)
 
+            """
+            Use this print statement to debug if the LLM is giving an incorrectly formatted output string
+            """
+            # print(f"The API call has been sent and received: {output}")
+            
+            # Parse the JSON content and return to client
+            try:
+                insights = json.loads(output)
+                return jsonify(insights)
+            except:
+                print(f"Error: Gemini response was not valid JSON: {output}")
+                return jsonify({"error": "Gemini response was not valid JSON"}), 500
+            
         except Exception as e:
             print(f"Error in search: {str(e)}")
             return jsonify({"error": "Internal server error"}), 500
@@ -941,7 +947,7 @@ def create_app():
             """
             Printing the output to see if the LLM answers with any extra characters or formatting to then remove it using RE
             """
-            print(f"The API call has been sent and received: {response.text}")
+            # print(f"The API call has been sent and received: {response.text}")
 
             output = response.text
             output = re.sub(r'```json\n', '', output)

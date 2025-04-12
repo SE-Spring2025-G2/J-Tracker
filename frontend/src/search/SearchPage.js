@@ -63,7 +63,7 @@ class SearchPage extends Component {
         try {
             const [resumeContent, insightsResponse] = await Promise.all([
                 this.fetchResume(),
-                axios.get('http://127.0.0.1:5000/search', {
+                axios.get('http://127.0.0.1:5000/fake-job', {
                     params: { keywords: this.state.searchText },
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
