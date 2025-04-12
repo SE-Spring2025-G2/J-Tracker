@@ -1,7 +1,7 @@
 services:
     api:
         build:
-            context: .
+            context: ./backend
             dockerfile: dockerfile.api
         image: ats-api
         volumes:
@@ -12,13 +12,18 @@ services:
             - ats-network
     client:
         build:
-            context: .
+            context: ./frontend
             dockerfile: dockerfile.client
         image: ats-client
+        volumes:
+            - ./frontend:/app
+            - /app/node_modules
         ports:
             - '3000:3000'
         networks:
             - ats-network
+        environment:
+            - CHOKIDAR_USEPOLLING=true
 
 networks:
     ats-network:
