@@ -972,41 +972,58 @@ def create_app():
             resume = data['resume']
             job_insights = data['jobInsights']
             
-            # Use GPT to compare resume with job requirements
-            headers = {
-                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
-                "Content-Type": "application/json"
-            }
+            api_key = os.getenv('GEMINI_API_KEY')
+            if not api_key:
+                return jsonify({"error": "GEMINI_API_KEY not set in .env"}), 500
+            
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-2.0-flash')
             
             prompt = f"""
             Compare this resume with the job requirements and provide a detailed analysis:
             Resume: {json.dumps(resume)}
             Job Requirements: {json.dumps(job_insights)}
             
-            Return format:
+            Return a JSON object with the following structure:
             {{
                 "overallMatch": percentage,
-                "matchingSkills": ["skill1", "skill2"],
-                "missingSkills": ["skill1", "skill2"],
-                "recommendations": ["rec1", "rec2"]
+                "matchingSkills": ["skill1", "skill2", ...],
+                "missingSkills": ["skill1", "skill2", ...],
+                "recommendations": ["rec1", "rec2", ...]
             }}
             """
             
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json={
-                    "model": "gpt-3.5-turbo",
-                    "messages": [
-                        {"role": "system", "content": "You are a resume analyzer."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    "temperature": 0.7
-                }
-            )
+            # replacing earlier ChatGPT call with Gemini-2.0-flash
+            # response = requests.post(
+            #     "https://api.openai.com/v1/chat/completions",
+            #     headers=headers,
+            #     json={
+            #         "model": "gpt-3.5-turbo",
+            #         "messages": [
+            #             {"role": "system", "content": "You are a resume analyzer."},
+            #             {"role": "user", "content": prompt}
+            #         ],
+            #         "temperature": 0.7
+            #     }
+            # )
             
-            comparison = response.json()['choices'][0]['message']['content']
-            return jsonify(json.loads(comparison))
+            response = model.generate_content(prompt)
+            comparison = response.text
+            comparison = re.sub(r'```json\n', '', comparison)
+            comparison = re.sub(r'```', '', comparison)
+
+            """
+            Use this print statement to debug if the LLM is giving an incorrectly formatted output string
+            """
+            # print(f"The API call has been sent and received: {comparison}")
+            
+            # Parse the JSON content and return to client
+            try:
+                insights = json.loads(comparison)
+                return jsonify(insights)
+            except:
+                print(f"Error: Gemini response was not valid JSON: {comparison}")
+                return jsonify({"error": "Gemini response was not valid JSON"}), 500
 
         except Exception as e:
             print(f"Error comparing resume: {str(e)}")
