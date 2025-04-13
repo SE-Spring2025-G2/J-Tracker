@@ -1,59 +1,106 @@
 import React, { Component } from 'react'
 import $ from 'jquery'
-import { Container, Row, Col, Card, Button } from 'react-bootstrap'
+import { Container, Row, Col, Card, Button, Alert, Modal } from 'react-bootstrap'
 
 export default class ManageResumePage extends Component {
-  constructor (props) {
+  constructor(props) {
     super(props)
     this.state = {
       fileName: '',
       fileuploadname: '',
-      resumeDownloadContent: null
+      resumeDownloadContent: null,
+      errorMessage: '',
+      showError: false,
+      isPdf: false
     }
 
-    console.log("***");
-    console.log(localStorage.getItem('token'));
     this.getFiles.bind(this);
   }
 
-  getFiles () {
+  getFiles() {
     $.ajax({
-          url: 'http://127.0.0.1:5000/resume',
-          method: 'GET',
-          headers: {
-            'Authorization': 'Bearer ' + localStorage.getItem('token'),
-            'Access-Control-Allow-Origin': 'http://127.0.0.1:3000',
-            'Access-Control-Allow-Credentials': 'true'
-          },
-          xhrFields: {
-            responseType: 'blob'
-          },
-          credentials: 'include',
-          success: (message, textStatus, response) => {
-            console.log(response.getResponseHeader('x-fileName'))
-            this.setState({ 
-              fileName: response.getResponseHeader('x-fileName'),
-              resumeDownloadContent: message
-            });
-          }
-      })
+      url: 'http://127.0.0.1:5000/resume',
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('token'),
+        'Access-Control-Allow-Origin': 'http://127.0.0.1:3000',
+        'Access-Control-Allow-Credentials': 'true'
+      },
+      xhrFields: {
+        responseType: 'blob'
+      },
+      credentials: 'include',
+      success: (message, textStatus, response) => {
+        const fileName = response.getResponseHeader('x-fileName');
+        const contentType = message.type;
+        const isPdf = contentType === 'application/pdf';
+
+        this.setState({ 
+          fileName: fileName,
+          resumeDownloadContent: message,
+          isPdf: isPdf
+        });
+        
+        if (!isPdf && message.size > 0) {
+          this.setState({
+            errorMessage: 'The current resume is not a PDF file. Some functionality may be limited.',
+            showError: true
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Error fetching resume:', error);
+      }
+    });
   }
 
   handleChange(event) {
-    var name = event.target.files[0].name;
-    console.log(`Selected file - ${event.target.files[0].name}`);
-    this.setState({ fileuploadname: name});
+    if (event.target.files.length > 0) {
+      const file = event.target.files[0];
+      const fileName = file.name;
+      const fileType = file.type;
+      
+      if (fileType !== 'application/pdf') {
+        this.setState({
+          errorMessage: 'Only PDF files are supported. Please select a PDF file.',
+          showError: true,
+          fileuploadname: ''
+        });
+        // Reset the file input
+        document.getElementById('file').value = '';
+      } else {
+        this.setState({ 
+          fileuploadname: fileName,
+          showError: false,
+          errorMessage: ''
+        });
+      }
+    }
   }
 
   uploadResume() {
-    this.setState({ fileName: this.state.fileuploadname});
-    console.log(this.value);
+    if (!this.state.fileuploadname) {
+      this.setState({
+        errorMessage: 'Please select a PDF file to upload',
+        showError: true
+      });
+      return;
+    }
+    
     const fileInput = document.getElementById('file').files[0];
-    //console.log(fileInput);
+    
+    if (fileInput.type !== 'application/pdf') {
+      this.setState({
+        errorMessage: 'Only PDF files are supported. Please select a PDF file.',
+        showError: true
+      });
+      return;
+    }
 
+    this.setState({ fileName: this.state.fileuploadname });
+    
     let formData = new FormData();
     formData.append('file', fileInput);
-    //console.log(formData);
 
     $.ajax({
       url: 'http://127.0.0.1:5000/resume',
@@ -69,13 +116,33 @@ export default class ManageResumePage extends Component {
       processData: false,
       success: (msg) => {
         console.log(msg);
+        // Reset the file input after successful upload
+        document.getElementById('file').value = '';
+        this.setState({
+          fileuploadname: '',
+          showError: false,
+          errorMessage: ''
+        });
         // Refresh files list after upload
         this.getFiles();
+      },
+      error: (error) => {
+        this.setState({
+          errorMessage: 'Error uploading resume. Please try again.',
+          showError: true
+        });
       }
-    })
+    });
   }
 
   downloadResume() {
+    if (!this.state.isPdf) {
+      this.setState({
+        errorMessage: 'The current file is not a PDF. Download may not work properly.',
+        showError: true
+      });
+    }
+    
     if (this.state.resumeDownloadContent) {
       const url = window.URL.createObjectURL(this.state.resumeDownloadContent);
       const a = document.createElement('a');
@@ -103,6 +170,14 @@ export default class ManageResumePage extends Component {
         responseType: 'blob'
       },
       success: (message, textStatus, response) => {
+        const contentType = message.type;
+        if (contentType !== 'application/pdf') {
+          this.setState({
+            errorMessage: 'The current file is not a PDF. Download may not work properly.',
+            showError: true
+          });
+        }
+        
         const url = window.URL.createObjectURL(message);
         const a = document.createElement('a');
         a.href = url;
@@ -111,11 +186,24 @@ export default class ManageResumePage extends Component {
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
+      },
+      error: (error) => {
+        this.setState({
+          errorMessage: 'Error downloading resume. Please try again.',
+          showError: true
+        });
       }
     });
   }
 
   viewResume() {
+    if (!this.state.isPdf) {
+      this.setState({
+        errorMessage: 'The current file is not a PDF. Viewing may not work properly.',
+        showError: true
+      });
+    }
+    
     if (this.state.resumeDownloadContent) {
       const url = window.URL.createObjectURL(this.state.resumeDownloadContent);
       window.open(url, '_blank');
@@ -137,9 +225,29 @@ export default class ManageResumePage extends Component {
         responseType: 'blob'
       },
       success: (message) => {
+        const contentType = message.type;
+        if (contentType !== 'application/pdf') {
+          this.setState({
+            errorMessage: 'The current file is not a PDF. Viewing may not work properly.',
+            showError: true
+          });
+        }
+        
         const url = window.URL.createObjectURL(message);
         window.open(url, '_blank');
+      },
+      error: (error) => {
+        this.setState({
+          errorMessage: 'Error viewing resume. Please try again.',
+          showError: true
+        });
       }
+    });
+  }
+
+  closeError = () => {
+    this.setState({
+      showError: false
     });
   }
 
@@ -168,6 +276,7 @@ export default class ManageResumePage extends Component {
                     name="file" 
                     type="file" 
                     className="form-control" 
+                    accept=".pdf"
                     onChange={this.handleChange.bind(this)}
                   />
                   <Button 
@@ -205,6 +314,19 @@ export default class ManageResumePage extends Component {
                     </Col>
                   </Row>
                 </Card>
+
+                {/* Error Modal */}
+                <Modal show={this.state.showError} onHide={this.closeError}>
+                  <Modal.Header closeButton>
+                    <Modal.Title>Error</Modal.Title>
+                  </Modal.Header>
+                  <Modal.Body>{this.state.errorMessage}</Modal.Body>
+                  <Modal.Footer>
+                    <Button variant="secondary" onClick={this.closeError}>
+                      Close
+                    </Button>
+                  </Modal.Footer>
+                </Modal>
               </Card.Body>
             </Card>
           </Col>
