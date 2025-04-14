@@ -45,13 +45,17 @@ export default class LoginPage extends Component {
 			password: pwd,
 			fullName: fullname
 		};
-		//console.log(obj)
+		
 		signUp(obj)
 			.then((res) => {
-				alert('Sign up successfull! Proceed to Login');
+				console.log("Signup successful:", res);
+				
+				// Automatically log in after successful signup
+				this.handleLogin(uname, pwd);
 			})
 			.catch((error) => {
-				alert('Error while signing up !');
+				console.error("Signup error:", error);
+				alert('Error while signing up!');
 			});
 	};
 
