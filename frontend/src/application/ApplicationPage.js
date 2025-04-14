@@ -26,6 +26,14 @@ const ApplicationsList = ({ applicationList, handleCardClick, selectedApplicatio
     return status;
   }
 
+  // Handle opening job link in new tab without triggering card click
+  const handleOpenJobLink = (e, link) => {
+    e.stopPropagation(); // Prevent card click event
+    if (link) {
+      window.open(link, '_blank');
+    }
+  };
+
   return (
     <>
       <Button style={{ marginLeft: "11%", marginTop: "4%", backgroundColor: "#296E85" }} size="lg" onClick={() => {
@@ -81,6 +89,16 @@ const ApplicationsList = ({ applicationList, handleCardClick, selectedApplicatio
                       <Card.Subtitle style={{ fontSize: "16px" }}>
                         {jobListing?.companyName}
                       </Card.Subtitle>
+                      {jobListing?.jobLink && (
+                          <Button 
+                            variant="outline-primary" 
+                            size="sm"
+                            style={{ marginTop: "10px" }}
+                            onClick={(e) => handleOpenJobLink(e, jobListing.jobLink)}
+                          >
+                            Open Job Listing
+                          </Button>
+                        )}
                     </Col>
                     <Col sm={6} mb={3} mb-sm={0}>
                       <Card.Text style={{ fontSize: "14px" }}>
@@ -222,6 +240,7 @@ const ApplicationPage = () => {
         jobLink: jobLink
       }
 
+      // API call to create a new application tracker
       if (application.id === null) {
         fetch('http://127.0.0.1:5000/applications', {
           headers: {
