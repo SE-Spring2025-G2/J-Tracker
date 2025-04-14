@@ -71,7 +71,7 @@ const ApplicationsList = ({ applicationList, handleCardClick, selectedApplicatio
         + Add New Application
       </Button>
 
-      {/* <div style={{ margin: '20px 10%', width: '80%' }}>
+      <div style={{ margin: '20px 10%', width: '80%' }}>
         <input
           type="text"
           className="form-control"
@@ -79,7 +79,7 @@ const ApplicationsList = ({ applicationList, handleCardClick, selectedApplicatio
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-      </div> */}
+      </div>
 
       <Container style={{ marginTop: "30px", marginBottom: "40px" }}>
         {Object.entries(groupedApplications).map(([statusKey, applications]) => {
