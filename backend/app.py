@@ -752,7 +752,36 @@ def create_app():
             applications = user["applications"] + [current_application]
 
             user.update(applications=applications)
-            return jsonify(current_application), 200
+
+            try:
+                # Check if job already exists in shared pool (is this logic correct?)
+                existing_job = SharedJobs.objects(
+                jobTitle=request_data["jobTitle"],
+                companyName=request_data["companyName"],
+                jobLink=request_data["jobLink"],
+                ).first()
+
+                if existing_job:
+                    return jsonify(current_application), 200
+                
+                # Create new shared job
+                job_id = str(uuid.uuid4())
+                new_job = SharedJobs(
+                    id=job_id,
+                    jobTitle=request_data["jobTitle"],
+                    companyName=request_data["companyName"],
+                    location=request_data.get("location", ""),
+                    jobLink=request_data.get("jobLink", ""),
+                    postedBy=userid,
+                    appliedBy=1  # current user is the only one who has applied to the job
+                )
+                new_job.save()
+
+                return jsonify(current_application), 200
+                
+            except:
+                return jsonify(current_application), 200
+
         except:
             return jsonify({"error": "Internal server error"}), 500
 
@@ -1097,10 +1126,11 @@ def create_app():
 
             available_jobs = []
             for job in all_shared_jobs:
-                job_key = job["companyName"].lower() + ":" + app["jobLink"].lower()
+                job_key = job["companyName"].lower() + ":" + job["jobLink"].lower()
 
                 # Check if user has already applied to this job
                 if job_key not in user_applications:
+                    print(f"Found applications {job_key}")
                     available_jobs.append({
                         "id": job["id"],
                         "jobTitle": job["jobTitle"],
@@ -1117,45 +1147,45 @@ def create_app():
             return jsonify({"error": "Internal server error"}), 500
         
 
-    @app.route("/jobs/share", methods=["POST"])
-    def share_job():
-        """
-        Shares a job application with all users
-        """
-        try:
-            userid = get_userid_from_header()
-            data = json.loads(request.data)
+    # @app.route("/jobs/share", methods=["POST"])
+    # def share_job():
+    #     """
+    #     Shares a job application with all users
+    #     """
+    #     try:
+    #         userid = get_userid_from_header()
+    #         data = json.loads(request.data)
 
-            # Check if job already exists (is this logic correct?)
-            existing_job = SharedJobs.objects(
-                jobTitle=data["jobTitle"],
-                companyName=data["companyName"],
-                jobLink=data["jobLink"],
-            ).first()
+    #         # Check if job already exists (is this logic correct?)
+    #         existing_job = SharedJobs.objects(
+    #             jobTitle=data["jobTitle"],
+    #             companyName=data["companyName"],
+    #             jobLink=data["jobLink"],
+    #         ).first()
 
-            if existing_job:
-                return jsonify({"message": "Job already shared", "id": existing_job.id}), 200
+    #         if existing_job:
+    #             return jsonify({"message": "Job already shared", "id": existing_job.id}), 200
 
-            # Create new shared job
-            job_id = str(uuid.uuid4())
-            new_job = SharedJobs(
-                id=job_id,
-                jobTitle=data["jobTitle"],
-                companyName=data["companyName"],
-                location=data.get("location", ""),
-                jobLink=data.get("jobLink", ""),
-                postedBy=userid,
-                appliedBy=1  # Add current user to applied list
-            )
-            new_job.save()
+    #         # Create new shared job
+    #         job_id = str(uuid.uuid4())
+    #         new_job = SharedJobs(
+    #             id=job_id,
+    #             jobTitle=data["jobTitle"],
+    #             companyName=data["companyName"],
+    #             location=data.get("location", ""),
+    #             jobLink=data.get("jobLink", ""),
+    #             postedBy=userid,
+    #             appliedBy=1  # Add current user to applied list
+    #         )
+    #         new_job.save()
 
-            return jsonify({
-                "message": "Job shared successfully",
-                "id": job_id
-            }), 201
-        except Exception as e:
-            print(f"Error sharing job: {str(e)}")
-            return jsonify({"error": "Internal server error"}), 500
+    #         return jsonify({
+    #             "message": "Job shared successfully",
+    #             "id": job_id
+    #         }), 201
+    #     except Exception as e:
+    #         print(f"Error sharing job: {str(e)}")
+    #         return jsonify({"error": "Internal server error"}), 500
 
     return app
 
