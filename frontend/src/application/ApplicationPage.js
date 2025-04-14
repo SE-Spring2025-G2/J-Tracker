@@ -11,6 +11,9 @@ const ApplicationsList = ({ applicationList, handleCardClick, selectedApplicatio
   const [date, setDate] = useState();
   const [jobLink, setJobLink] = useState();
   const [isCreate, setIsCreate] = useState();
+  const [openSections, setOpenSections] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
+
 
   const findStatus = (value) => {
     let status = ''
@@ -26,85 +29,238 @@ const ApplicationsList = ({ applicationList, handleCardClick, selectedApplicatio
     return status;
   }
 
+  const statusMap = {
+    '1': 'Wish List',
+    '2': 'Waiting for Referral',
+    '3': 'Applied',
+    '4': 'Rejected',
+  };
+
+  const statusColors = {
+    '1': '#FFF9C4', // light yellow
+    '2': '#BBDEFB', // light blue
+    '3': '#C8E6C9', // light green
+    '4': '#FFCDD2', // light red
+  };
+
+  const groupedApplications = applicationList.reduce((groups, app) => {
+    const status = app.status || 'Unknown';
+    if (!groups[status]) groups[status] = [];
+    groups[status].push(app);
+    return groups;
+  }, {});
+
+
   return (
     <>
-      <Button style={{ marginLeft: "11%", marginTop: "4%", backgroundColor: "#296E85" }} size="lg" onClick={() => {
-        handleCardClick(null);
-        setCloseModal(false);
-        setIsCreate(true);
-        setJob(null);
-        setCompany(null);
-        setLocation(null);
-        setStatus(null);
-        setDate(null);
-        setStatus(null);
-        setJobLink(null);
-      }}>
+      <Button
+        style={{ marginLeft: "11%", marginTop: "4%", backgroundColor: "#296E85" }}
+        size="lg"
+        onClick={() => {
+          handleCardClick(null);
+          setCloseModal(false);
+          setIsCreate(true);
+          setJob(null);
+          setCompany(null);
+          setLocation(null);
+          setStatus(null);
+          setDate(null);
+          setJobLink(null);
+        }}
+      >
         + Add New Application
       </Button>
-      <Container style={{ marginTop: "20px" }}>
-        <Row>
-          {applicationList.map((jobListing) => (
-            <Col
-              key={jobListing.id}
-              md={12}
-              style={{ marginBottom: "20px" }}
-            >
-              <Card
+
+      <div style={{ margin: '20px 10%', width: '80%' }}>
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Search by company name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
+      {/* <Container style={{ marginTop: "30px", marginBottom: "40px" }}>
+        {Object.entries(groupedApplications).map(([statusKey, applications]) => {
+          const isOpen = openSections[statusKey] ?? true;
+
+          const toggleSection = () => {
+            setOpenSections(prev => ({
+              ...prev,
+              [statusKey]: !prev[statusKey],
+            }));
+          };
+
+          return (
+            <div key={statusKey} style={{ marginBottom: '20px' }}>
+              <div
+                onClick={toggleSection}
                 style={{
-                  marginLeft: "10%",
-                  borderColor: "#ccc",
-                  borderRadius: "5px",
-                  boxShadow: "0 4px 8px 0 rgba(0, 0, 0, 0.2)",
-                  transition: "0.3s",
-                  cursor: "pointer",
-                }}
-                onClick={() => {
-                  handleCardClick(jobListing);
-                  setCloseModal(false);
-                  setJob(jobListing?.jobTitle);
-                  setCompany(jobListing?.companyName);
-                  setLocation(jobListing?.location);
-                  setStatus(jobListing?.status);
-                  setDate(jobListing?.date);
-                  setStatus(jobListing?.status);
-                  setJobLink(jobListing?.jobLink);
-                  setIsCreate(false);
+                  backgroundColor: '#ddd',
+                  padding: '10px 15px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  borderRadius: '5px',
                 }}
               >
-                <Card.Body style={{ padding: "20px" }}>
+                {statusMap[statusKey] || 'Unknown'}
+              </div>
+
+              {isOpen && (
+                <div style={{ backgroundColor: statusColors[statusKey] || '#F5F5F5', padding: '10px', borderRadius: '5px' }}>
                   <Row>
-                    <Col sm={6} mb={3} mb-sm={0}>
-                      <Card.Title style={{ fontSize: "20px" }}>
-                        {jobListing?.jobTitle}
-                      </Card.Title>
-                      <Card.Subtitle style={{ fontSize: "16px" }}>
-                        {jobListing?.companyName}
-                      </Card.Subtitle>
-                    </Col>
-                    <Col sm={6} mb={3} mb-sm={0}>
-                      <Card.Text style={{ fontSize: "14px" }}>
-                        <div style={{ display: "flex" }}>
-                          <div>Location: </div>
-                          <div>{jobListing.location}</div>
-                        </div>
-                        <div style={{ display: "flex" }}>
-                          <div>Date: </div>
-                          <div>{jobListing.date}</div>
-                        </div>
-                        <div style={{ display: "flex" }}>
-                          <div>Status: </div>
-                          <div>{findStatus(jobListing.status)}</div>
-                        </div>
-                      </Card.Text>
-                    </Col>
+                    {applications.map((jobListing) => (
+                      <Col md={12} key={jobListing.id} style={{ marginBottom: "20px" }}>
+                        <Card
+                          style={{
+                            marginLeft: "5%",
+                            borderColor: "#ccc",
+                            borderRadius: "5px",
+                            boxShadow: "0 4px 8px 0 rgba(0, 0, 0, 0.2)",
+                            transition: "0.3s",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => {
+                            handleCardClick(jobListing);
+                            setCloseModal(false);
+                            setJob(jobListing?.jobTitle);
+                            setCompany(jobListing?.companyName);
+                            setLocation(jobListing?.location);
+                            setStatus(jobListing?.status);
+                            setDate(jobListing?.date);
+                            setJobLink(jobListing?.jobLink);
+                            setIsCreate(false);
+                          }}
+                        >
+                          <Card.Body style={{ padding: "20px" }}>
+                            <Row>
+                              <Col sm={6}>
+                                <Card.Title style={{ fontSize: "20px" }}>
+                                  {jobListing?.jobTitle}
+                                </Card.Title>
+                                <Card.Subtitle style={{ fontSize: "16px" }}>
+                                  {jobListing?.companyName}
+                                </Card.Subtitle>
+                              </Col>
+                              <Col sm={6}>
+                                <Card.Text style={{ fontSize: "14px" }}>
+                                  <div>Location: {jobListing.location}</div>
+                                  <div>Date: {jobListing.date}</div>
+                                  <div>Status: {statusMap[jobListing.status]}</div>
+                                </Card.Text>
+                              </Col>
+                            </Row>
+                          </Card.Body>
+                        </Card>
+                      </Col>
+                    ))}
                   </Row>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        </Row>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </Container> */}
+      <Container style={{ marginTop: "30px", marginBottom: "40px" }}>
+        {Object.entries(groupedApplications).map(([statusKey, applications]) => {
+          const isOpen = openSections[statusKey] ?? true;
+
+          const toggleSection = () => {
+            setOpenSections(prev => ({
+              ...prev,
+              [statusKey]: !prev[statusKey],
+            }));
+          };
+
+          const filteredApplications = applications.filter((app) =>
+            app.companyName.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+
+          // Skip this section if nothing matches search
+          if (filteredApplications.length === 0) return null;
+
+          return (
+            <div key={statusKey} style={{ marginBottom: '20px' }}>
+              <div
+                onClick={toggleSection}
+                style={{
+                  backgroundColor: '#ddd',
+                  padding: '10px 15px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  borderRadius: '5px',
+                  userSelect: 'none',
+                }}
+              >
+                {statusMap[statusKey] || 'Unknown'} ({filteredApplications.length})
+                <span
+                  style={{
+                    float: 'right',
+                    transition: 'transform 0.3s',
+                    transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                  }}
+                >
+                  ▶
+                </span>
+              </div>
+
+              {isOpen && (
+                <div style={{ backgroundColor: statusColors[statusKey] || '#F5F5F5', padding: '10px', borderRadius: '5px' }}>
+                  <Row>
+                    {filteredApplications.map((jobListing) => (
+                      <Col md={12} key={jobListing.id} style={{ marginBottom: "20px" }}>
+                        <Card
+                          style={{
+                            marginLeft: "5%",
+                            borderColor: "#ccc",
+                            borderRadius: "5px",
+                            boxShadow: "0 4px 8px 0 rgba(0, 0, 0, 0.2)",
+                            transition: "0.3s",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => {
+                            handleCardClick(jobListing);
+                            setCloseModal(false);
+                            setJob(jobListing?.jobTitle);
+                            setCompany(jobListing?.companyName);
+                            setLocation(jobListing?.location);
+                            setStatus(jobListing?.status);
+                            setDate(jobListing?.date);
+                            setJobLink(jobListing?.jobLink);
+                            setIsCreate(false);
+                          }}
+                        >
+                          <Card.Body style={{ padding: "20px" }}>
+                            <Row>
+                              <Col sm={6}>
+                                <Card.Title style={{ fontSize: "20px" }}>
+                                  {jobListing?.jobTitle}
+                                </Card.Title>
+                                <Card.Subtitle style={{ fontSize: "16px" }}>
+                                  {jobListing?.companyName}
+                                </Card.Subtitle>
+                              </Col>
+                              <Col sm={6}>
+                                <Card.Text style={{ fontSize: "14px" }}>
+                                  <div>Location: {jobListing.location}</div>
+                                  <div>Date: {jobListing.date}</div>
+                                  <div>Status: {statusMap[jobListing.status]}</div>
+                                </Card.Text>
+                              </Col>
+                            </Row>
+                          </Card.Body>
+                        </Card>
+                      </Col>
+                    ))}
+                  </Row>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </Container>
+
 
       {/* Modal for updating details */}
       <Modal show={!closeModal} onHide={() => setCloseModal(true)}>
@@ -112,59 +268,56 @@ const ApplicationsList = ({ applicationList, handleCardClick, selectedApplicatio
           <Modal.Title>Update Details</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {
-            (
-              <>
-                <div className="form-group">
-                  <label className='col-form-label'>Job Title</label>
-                  <input type="text" className="form-control" id="jobTitle" placeholder="Job Title" value={job} onChange={(e) => setJob(e.target.value)} />
-                </div>
+          <>
+            <div className="form-group">
+              <label className='col-form-label'>Job Title</label>
+              <input type="text" className="form-control" id="jobTitle" placeholder="Job Title" value={job} onChange={(e) => setJob(e.target.value)} />
+            </div>
 
-                <div className="form-group">
-                  <label className='col-form-label'>Company Name</label>
-                  <input type="text" className="form-control" id="companyName" placeholder="Company Name" value={company} onChange={(e) => setCompany(e.target.value)} />
-                </div>
+            <div className="form-group">
+              <label className='col-form-label'>Company Name</label>
+              <input type="text" className="form-control" id="companyName" placeholder="Company Name" value={company} onChange={(e) => setCompany(e.target.value)} />
+            </div>
 
-                <div className='form-group'>
-                  <label className='col-form-label'>Date</label>
-                  <input type='date' className='form-control' id='date' value={date} onChange={(e) => setDate(e.target.value)} />
-                </div>
+            <div className='form-group'>
+              <label className='col-form-label'>Date</label>
+              <input type='date' className='form-control' id='date' value={date} onChange={(e) => setDate(e.target.value)} />
+            </div>
 
-                <div className='form-group'>
-                  <label className='col-form-label'>Job Link</label>
-                  <input type='text' className='form-control' id='jobLink' placeholder='Job Link' value={jobLink} onChange={(e) => setJobLink(e.target.value)} />
-                </div>
+            <div className='form-group'>
+              <label className='col-form-label'>Job Link</label>
+              <input type='text' className='form-control' id='jobLink' placeholder='Job Link' value={jobLink} onChange={(e) => setJobLink(e.target.value)} />
+            </div>
 
-                <div className='form-group'>
-                  <label className='col-form-label'>Location</label>
-                  <input type='text' className='form-control' id='location' placeholder='Location' value={location} onChange={(e) => setLocation(e.target.value)} />
-                </div>
+            <div className='form-group'>
+              <label className='col-form-label'>Location</label>
+              <input type='text' className='form-control' id='location' placeholder='Location' value={location} onChange={(e) => setLocation(e.target.value)} />
+            </div>
 
-                <div className='input-group mb-3'>
-                  <div className='input-group-prepend'>
-                    <label className='input-group-text'>Application Type</label>
-                  </div>
-                  <select className='custom-select' id='status' value={status} onChange={(e) => setStatus(e.target.value)}>
-                    <option>Choose...</option>
-                    <option value='1'>Wish list</option>
-                    <option value='2'>Waiting Referral</option>
-                    <option value='3'>Applied</option>
-                    <option value='4'>Rejected</option>
-                  </select>
-                </div>
-              </>
-            )}
+            <div className='input-group mb-3'>
+              <div className='input-group-prepend'>
+                <label className='input-group-text'>Application Type</label>
+              </div>
+              <select className='custom-select' id='status' value={status} onChange={(e) => setStatus(e.target.value)}>
+                <option>Choose...</option>
+                <option value='1'>Wish list</option>
+                <option value='2'>Waiting Referral</option>
+                <option value='3'>Applied</option>
+                <option value='4'>Rejected</option>
+              </select>
+            </div>
+          </>
         </Modal.Body>
         <Modal.Footer>
           {!isCreate && (
-            <>
-              <Button variant="danger" onClick={(e) => {
-                e.preventDefault();
-                handleDeleteApplication(selectedApplication);
-                setCloseModal(true);
-              }}>
-                Delete
-              </Button> </>)}
+            <Button variant="danger" onClick={(e) => {
+              e.preventDefault();
+              handleDeleteApplication(selectedApplication);
+              setCloseModal(true);
+            }}>
+              Delete
+            </Button>
+          )}
           <Button variant="success" onClick={(e) => {
             e.preventDefault();
             let jobTitle = document.querySelector("#jobTitle").value
@@ -175,8 +328,7 @@ const ApplicationsList = ({ applicationList, handleCardClick, selectedApplicatio
             let jobLink = document.querySelector("#jobLink").value
             handleUpdateDetails(selectedApplication?.id, jobTitle, companyName, location, date, status, jobLink);
             setCloseModal(true);
-          }
-          }>
+          }}>
             Save Changes
           </Button>
         </Modal.Footer>
@@ -184,6 +336,7 @@ const ApplicationsList = ({ applicationList, handleCardClick, selectedApplicatio
     </>
   );
 };
+
 
 const ApplicationPage = () => {
   const [applicationList, setApplicationList] = useState([]);
