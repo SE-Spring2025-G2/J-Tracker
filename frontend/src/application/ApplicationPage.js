@@ -71,7 +71,7 @@ const ApplicationsList = ({ applicationList, handleCardClick, selectedApplicatio
         + Add New Application
       </Button>
 
-      <div style={{ margin: '20px 10%', width: '80%' }}>
+      {/* <div style={{ margin: '20px 10%', width: '80%' }}>
         <input
           type="text"
           className="form-control"
@@ -79,89 +79,8 @@ const ApplicationsList = ({ applicationList, handleCardClick, selectedApplicatio
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-      </div>
+      </div> */}
 
-      {/* <Container style={{ marginTop: "30px", marginBottom: "40px" }}>
-        {Object.entries(groupedApplications).map(([statusKey, applications]) => {
-          const isOpen = openSections[statusKey] ?? true;
-
-          const toggleSection = () => {
-            setOpenSections(prev => ({
-              ...prev,
-              [statusKey]: !prev[statusKey],
-            }));
-          };
-
-          return (
-            <div key={statusKey} style={{ marginBottom: '20px' }}>
-              <div
-                onClick={toggleSection}
-                style={{
-                  backgroundColor: '#ddd',
-                  padding: '10px 15px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  borderRadius: '5px',
-                }}
-              >
-                {statusMap[statusKey] || 'Unknown'}
-              </div>
-
-              {isOpen && (
-                <div style={{ backgroundColor: statusColors[statusKey] || '#F5F5F5', padding: '10px', borderRadius: '5px' }}>
-                  <Row>
-                    {applications.map((jobListing) => (
-                      <Col md={12} key={jobListing.id} style={{ marginBottom: "20px" }}>
-                        <Card
-                          style={{
-                            marginLeft: "5%",
-                            borderColor: "#ccc",
-                            borderRadius: "5px",
-                            boxShadow: "0 4px 8px 0 rgba(0, 0, 0, 0.2)",
-                            transition: "0.3s",
-                            cursor: "pointer",
-                          }}
-                          onClick={() => {
-                            handleCardClick(jobListing);
-                            setCloseModal(false);
-                            setJob(jobListing?.jobTitle);
-                            setCompany(jobListing?.companyName);
-                            setLocation(jobListing?.location);
-                            setStatus(jobListing?.status);
-                            setDate(jobListing?.date);
-                            setJobLink(jobListing?.jobLink);
-                            setIsCreate(false);
-                          }}
-                        >
-                          <Card.Body style={{ padding: "20px" }}>
-                            <Row>
-                              <Col sm={6}>
-                                <Card.Title style={{ fontSize: "20px" }}>
-                                  {jobListing?.jobTitle}
-                                </Card.Title>
-                                <Card.Subtitle style={{ fontSize: "16px" }}>
-                                  {jobListing?.companyName}
-                                </Card.Subtitle>
-                              </Col>
-                              <Col sm={6}>
-                                <Card.Text style={{ fontSize: "14px" }}>
-                                  <div>Location: {jobListing.location}</div>
-                                  <div>Date: {jobListing.date}</div>
-                                  <div>Status: {statusMap[jobListing.status]}</div>
-                                </Card.Text>
-                              </Col>
-                            </Row>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                    ))}
-                  </Row>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </Container> */}
       <Container style={{ marginTop: "30px", marginBottom: "40px" }}>
         {Object.entries(groupedApplications).map(([statusKey, applications]) => {
           const isOpen = openSections[statusKey] ?? true;
