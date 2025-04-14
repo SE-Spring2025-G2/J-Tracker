@@ -23,7 +23,7 @@ const Recommendations = () => {
             const token = localStorage.getItem('token');
             console.log('Using token:', token); // Debug log
 
-            const response = await fetch('http://localhost:5000/getRecommendations', {
+            const response = await fetch('http://localhost:5000/jobs/shared', {
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'

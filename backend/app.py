@@ -314,32 +314,33 @@ def create_app():
             print(err)
             return jsonify({"error": "Internal server error"}), 500
 
-    @app.route("/getRecommendations", methods=["GET"])
-    def getRecommendations():
-        """
-        Get AI-powered job recommendations based on user's profile
-        """
-        try:
-            userid = get_userid_from_header()
-            user = Users.objects(id=userid).first()
+    # removing this API since its completely useless tbh
+    # @app.route("/getRecommendations", methods=["GET"])
+    # def getRecommendations():
+    #     """
+    #     Get AI-powered job recommendations based on user's profile
+    #     """
+    #     try:
+    #         userid = get_userid_from_header()
+    #         user = Users.objects(id=userid).first()
             
-            # Get AI-powered recommendations
-            recommendedJobs = get_ai_job_recommendations(
-                user["skills"],
-                user["job_levels"],
-                user["locations"]
-            )
+    #         # Get AI-powered recommendations
+    #         recommendedJobs = get_ai_job_recommendations(
+    #             user["skills"],
+    #             user["job_levels"],
+    #             user["locations"]
+    #         )
             
-            if not recommendedJobs:
-                return jsonify({
-                    "message": "No matching jobs found. Please update your profile with skills and preferences."
-                }), 200
+    #         if not recommendedJobs:
+    #             return jsonify({
+    #                 "message": "No matching jobs found. Please update your profile with skills and preferences."
+    #             }), 200
 
-            return jsonify(recommendedJobs), 200
+    #         return jsonify(recommendedJobs), 200
 
-        except Exception as err:
-            print(f"Error in getRecommendations: {str(err)}")
-            return jsonify({"error": "Internal server error"}), 500
+    #     except Exception as err:
+    #         print(f"Error in getRecommendations: {str(err)}")
+    #         return jsonify({"error": "Internal server error"}), 500
     
     # @app.route("/users/login", methods=["POST"])
     # def login():
@@ -1076,6 +1077,85 @@ def create_app():
         except Exception as e:
             print(f"Error saving analysis: {str(e)}")
             return jsonify({"error": "Internal server error"}), 500
+        
+    
+    @app.route("/jobs/shared", methods=["GET"])
+    def get_shared_jobs():
+        """
+        Gets all shared jobs that the user hasn't applied to yet
+        """
+        try:
+            userid = get_userid_from_header()
+            user = Users.objects(id=userid).first()
+
+            # Get all shared jobs
+            all_shared_jobs = SharedJobs.objects()
+
+            # Filter out jobs the user has already applied to
+            user_applications = [app["companyName"].lower() + ":" + app["jobLink"].lower()
+                              for app in user["applications"]]
+
+            available_jobs = []
+            for job in all_shared_jobs:
+                job_key = job["companyName"].lower() + ":" + app["jobLink"].lower()
+
+                # Check if user has already applied to this job
+                if job_key not in user_applications:
+                    available_jobs.append({
+                        "id": job["id"],
+                        "jobTitle": job["jobTitle"],
+                        "companyName": job["companyName"],
+                        "location": job["location"],
+                        "jobLink": job["jobLink"],
+                        "date": job["postedDate"].strftime("%Y-%m-%d"),
+                        "status": 0
+                    })
+
+            return jsonify(available_jobs), 200
+        except Exception as e:
+            print(f"Error getting shared jobs: {str(e)}")
+            return jsonify({"error": "Internal server error"}), 500
+        
+
+    @app.route("/jobs/share", methods=["POST"])
+    def share_job():
+        """
+        Shares a job application with all users
+        """
+        try:
+            userid = get_userid_from_header()
+            data = json.loads(request.data)
+
+            # Check if job already exists (is this logic correct?)
+            existing_job = SharedJobs.objects(
+                jobTitle=data["jobTitle"],
+                companyName=data["companyName"],
+                jobLink=data["jobLink"],
+            ).first()
+
+            if existing_job:
+                return jsonify({"message": "Job already shared", "id": existing_job.id}), 200
+
+            # Create new shared job
+            job_id = str(uuid.uuid4())
+            new_job = SharedJobs(
+                id=job_id,
+                jobTitle=data["jobTitle"],
+                companyName=data["companyName"],
+                location=data.get("location", ""),
+                jobLink=data.get("jobLink", ""),
+                postedBy=userid,
+                appliedBy=1  # Add current user to applied list
+            )
+            new_job.save()
+
+            return jsonify({
+                "message": "Job shared successfully",
+                "id": job_id
+            }), 201
+        except Exception as e:
+            print(f"Error sharing job: {str(e)}")
+            return jsonify({"error": "Internal server error"}), 500
 
     return app
 
@@ -1229,6 +1309,19 @@ class Users(db.Document):
         """
         return {"id": self.id, "fullName": self.fullName, "username": self.username}
 
+class SharedJobs(db.Document):
+    """
+    Shared jobs collection. Contains job postings that can be viewed by all users.
+    """
+    id = db.StringField(primary_key=True)   #job id in the recommended jobs section
+    jobTitle = db.StringField(required=True)    # title of the job
+    companyName = db.StringField(required=True) # name of the company where the job is
+    location = db.StringField() #location / region of the job
+    jobLink = db.StringField()  #link to the job posting
+    postedBy = db.IntField(required=True)  # User ID who added this job
+    postedDate = db.DateTimeField(default=datetime.now)
+    appliedBy = db.IntField(default=1)  # number of people who have applied
+    active = db.IntField(default=1) #whether the job is still open or not
 
 def get_new_user_id():
     """
