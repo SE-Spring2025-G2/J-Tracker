@@ -69,3 +69,19 @@ test('renders add application button', () => {
 	render(<ApplicationPage />);
 	expect(screen.getByText('+ Add New Application')).toBeInTheDocument();
 });
+
+
+// 10. Application list renders a job title
+test('renders application job title', () => {
+	const applications = [{ id: 1, jobTitle: 'Frontend Dev', companyName: '', location: '', date: '', status: '1' }];
+	render(<ApplicationPage applicationList={applications} handleCardClick={() => {}} selectedApplication={null} handleUpdateDetails={() => {}} handleDeleteApplication={() => {}} />);
+	expect(screen.getByText('Frontend Dev')).toBeInTheDocument();
+});
+
+// 11. Application list renders company name
+test('renders application company', () => {
+	const applications = [{ id: 1, jobTitle: '', companyName: 'Meta', location: '', date: '', status: '1' }];
+	render(<ApplicationPage applicationList={applications} handleCardClick={() => {}} selectedApplication={null} handleUpdateDetails={() => {}} handleDeleteApplication={() => {}} />);
+	expect(screen.getByText('Meta')).toBeInTheDocument();
+});
+
