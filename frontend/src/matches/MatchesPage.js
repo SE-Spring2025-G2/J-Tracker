@@ -6,9 +6,12 @@ const Recommendations = () => {
     const [recommendedJobs, setRecommendedJobs] = useState([]);
     const [isFetchingJobs, setIsFetchingJobs] = useState(true);
     const [fetchError, setFetchError] = useState(null);
-    const [wishList, setWishList] = useState(
-        localStorage.getItem('wishList') ? JSON.parse(localStorage.getItem('wishList')) : {}
-    );
+    const [addingToWishlist, setAddingToWishlist] = useState({}); //this is to initiate the spinner
+    const [wishlistSuccess, setWishlistSuccess] = useState({}); //to determine if the job has been wishlisted or not
+    const [fadeOutJobs, setFadeOutJobs] = useState({});
+    // const [wishList, setWishList] = useState(
+    //     localStorage.getItem('wishList') ? JSON.parse(localStorage.getItem('wishList')) : {}
+    // );
 
     useEffect(() => {
         fetchRecommendations();
@@ -23,7 +26,7 @@ const Recommendations = () => {
             const token = localStorage.getItem('token');
             console.log('Using token:', token); // Debug log
 
-            const response = await fetch('http://localhost:5000/getRecommendations', {
+            const response = await fetch('http://localhost:5000/jobs/shared', {
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -55,6 +58,69 @@ const Recommendations = () => {
         }
     };
 
+    // when a user clicks on the wishlist button, we add the 
+    // job to the users application tracker tab and then remove this 
+    // job from the recommended jobs pool
+    const jobWishList = async (job) => {
+        try {
+            //set loading state for this previous job
+            setAddingToWishlist(prev => ({ ...prev, [job.id]: true }));
+
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5000/wishlist', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ jobId: job.id })
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to add job to wishlist');
+            }
+
+            console.log('Job added to wishlist:', data);
+            
+            // Show success message for this job
+            setWishlistSuccess(prev => ({ ...prev, [job.id]: true }));
+            
+            // Start fade out animation after 1 second
+            setTimeout(() => {
+                setFadeOutJobs(prev => ({ ...prev, [job.id]: true }));
+                
+                // Remove job from list after fade completes (4 seconds total)
+                setTimeout(() => {
+                    setRecommendedJobs(prev => prev.filter(j => j.id !== job.id));
+                    // Clean up state for this job
+                    setWishlistSuccess(prev => {
+                        const newState = { ...prev };
+                        delete newState[job.id];
+                        return newState;
+                    });
+                    setFadeOutJobs(prev => {
+                        const newState = { ...prev };
+                        delete newState[job.id];
+                        return newState;
+                    });
+                    setAddingToWishlist(prev => {
+                        const newState = { ...prev };
+                        delete newState[job.id];
+                        return newState;
+                    });
+                }, 3000); // 3 seconds for fade effect
+            }, 1000); // 1 second delay before starting fade
+
+        } catch (error) {
+            console.error('Error adding job to wishlist:', error);
+            alert('Failed to add job to wishlist: ' + error.message);
+            // Reset loading state on error
+            setAddingToWishlist(prev => ({ ...prev, [job.id]: false }));
+        }
+    };
+
     // Add debug useEffect
     useEffect(() => {
         console.log('Current recommendedJobs:', recommendedJobs);
@@ -76,6 +142,17 @@ const Recommendations = () => {
             >
                 <thead>
                     <tr>
+                        <th
+                            className='p-3'
+                            style={{
+                                fontSize: 18,
+                                fontWeight: '500',
+                                backgroundColor: '#2a6e85',
+                                color: '#fff'
+                            }}
+                        >
+                            Sr. No.
+                        </th>
                         <th
                             className='p-3'
                             style={{
@@ -129,6 +206,17 @@ const Recommendations = () => {
                                 color: '#fff'
                             }}
                         >
+                            Applied By
+                        </th>
+                        <th
+                            className='p-3'
+                            style={{
+                                fontSize: 18,
+                                fontWeight: '500',
+                                backgroundColor: '#2a6e85',
+                                color: '#fff'
+                            }}
+                        >
                             Save
                         </th>
                     </tr>
@@ -139,13 +227,14 @@ const Recommendations = () => {
                         recommendedJobs &&
                         recommendedJobs.map((job, index) => (
                             <tr key={index}>
+                                <td className='p-3'>{index}</td>
                                 <td className='p-3'>{job.companyName}</td>
                                 <td className='p-3'>{job.jobTitle}</td>
                                 <td className='p-3'>
                                     <a
                                         target='_blank'
                                         rel='noopener noreferrer'
-                                        href={job.data_share_url}
+                                        href={job.jobLink}
                                     >
                                         <button
                                             type='button'
@@ -161,29 +250,35 @@ const Recommendations = () => {
                                     </a>
                                 </td>
                                 <td className='p-3'>{job.location}</td>
+                                <td className='p-3'>{job.appliedBy}</td>
                                 <td className='p-3'>
                                     <button
                                         type='button'
-                                        className='btn btn-dark'
-                                        onClick={() => {
-                                            const newWishList = { ...wishList };
-                                            newWishList[index] = !wishList[index];
-                                            setWishList(newWishList);
-                                            localStorage.setItem('wishList', JSON.stringify(newWishList));
+                                        className='btn btn-primary'
+                                        style={{
+                                            backgroundColor: wishlistSuccess[job.id] ? '#28a745' : '#2a6e85',
+                                            width: '150px'
                                         }}
+                                        onClick={() => jobWishList(job)}
+                                        disabled={addingToWishlist[job.id] || wishlistSuccess[job.id]}
                                     >
-                                        <FontAwesomeIcon
-                                            icon={`${wishList[index] ? 'fa-solid' : 'fa-regular'} fa-bookmark`}
-                                            size='1x'
-                                            style={{ cursor: 'pointer' }}
-                                        />
+                                        {addingToWishlist[job.id] ? (
+                                            <>
+                                                <Spinner otherCSS="me-2" size="sm" />
+                                                Adding...
+                                            </>
+                                        ) : wishlistSuccess[job.id] ? (
+                                            <>Added to wishlist! ✓</>
+                                        ) : (
+                                            <>Add to wishlist</>
+                                        )}
                                     </button>
                                 </td>
                             </tr>
                         ))}
                     {isFetchingJobs && (
                         <tr>
-                            <td colSpan={5} className='text-center p-3'>
+                            <td colSpan={7} className='text-center p-3'>
                                 <Spinner otherCSS='me-2' />
                                 Finding most relevant jobs for you...
                             </td>
@@ -191,7 +286,7 @@ const Recommendations = () => {
                     )}
                     {!isFetchingJobs && fetchError && (
                         <tr>
-                            <td colSpan={5} className='text-center p-3 text-danger'>
+                            <td colSpan={7} className='text-center p-3 text-danger'>
                                 {fetchError}
                             </td>
                         </tr>
@@ -200,8 +295,8 @@ const Recommendations = () => {
                         !fetchError &&
                         (!recommendedJobs || recommendedJobs.length === 0) && (
                             <tr>
-                                <td colSpan={5} className='text-center p-3'>
-                                    No matches found. Please update your profile with skills and preferences.
+                                <td colSpan={7} className='text-center p-3'>
+                                    No new jobs found at the moment. Take a break!
                                 </td>
                             </tr>
                         )}

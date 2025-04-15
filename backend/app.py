@@ -25,7 +25,7 @@ import requests
 from authlib.integrations.flask_client import OAuth
 from authlib.common.security import generate_token
 
-
+# need to add all endpoints to this list in order to place auth checks
 existing_endpoints = ["/applications", "/resume"]
 
 user_agent = UserAgent()
@@ -307,32 +307,33 @@ def create_app():
             print(err)
             return jsonify({"error": "Internal server error"}), 500
 
-    @app.route("/getRecommendations", methods=["GET"])
-    def getRecommendations():
-        """
-        Get AI-powered job recommendations based on user's profile
-        """
-        try:
-            userid = get_userid_from_header()
-            user = Users.objects(id=userid).first()
+    # removing this API since its completely useless tbh
+    # @app.route("/getRecommendations", methods=["GET"])
+    # def getRecommendations():
+    #     """
+    #     Get AI-powered job recommendations based on user's profile
+    #     """
+    #     try:
+    #         userid = get_userid_from_header()
+    #         user = Users.objects(id=userid).first()
             
-            # Get AI-powered recommendations
-            recommendedJobs = get_ai_job_recommendations(
-                user["skills"],
-                user["job_levels"],
-                user["locations"]
-            )
+    #         # Get AI-powered recommendations
+    #         recommendedJobs = get_ai_job_recommendations(
+    #             user["skills"],
+    #             user["job_levels"],
+    #             user["locations"]
+    #         )
             
-            if not recommendedJobs:
-                return jsonify({
-                    "message": "No matching jobs found. Please update your profile with skills and preferences."
-                }), 200
+    #         if not recommendedJobs:
+    #             return jsonify({
+    #                 "message": "No matching jobs found. Please update your profile with skills and preferences."
+    #             }), 200
 
-            return jsonify(recommendedJobs), 200
-
-        except Exception as err:
-            print(f"Error in getRecommendations: {str(err)}")
-            return jsonify({"error": "Internal server error"}), 500
+    #         return jsonify(recommendedJobs), 200
+    
+    #     except Exception as err:
+    #         print(f"Error in getRecommendations: {str(err)}")
+    #         return jsonify({"error": "Internal server error"}), 500
 
     @app.route("/users/login", methods=["POST"])
     def login():
@@ -557,7 +558,9 @@ def create_app():
     @app.route("/applications", methods=["POST"])
     def add_application():
         """
-        Add a new job application for the user
+        Add a new job application for the user to the applications tab. Check if this job exists in the shared application pool
+        If the job exists in the shared pool then we just increment the appliedBy count of the shared pool listing
+        If not then we add the job listing to the shared pool
 
         :return: JSON object with status and message
         """
@@ -583,7 +586,38 @@ def create_app():
             applications = user["applications"] + [current_application]
 
             user.update(applications=applications)
-            return jsonify(current_application), 200
+
+            try:
+                # Check if job already exists in shared pool (is this logic correct?)
+                existing_job = SharedJobs.objects(
+                jobTitle=request_data["jobTitle"],
+                companyName=request_data["companyName"],
+                jobLink=request_data["jobLink"],
+                ).first()
+
+                if existing_job:
+                    # Increment the appliedBy counter by 1
+                    existing_job.update(inc__appliedBy=1)
+                    return jsonify(current_application), 200
+                
+                # Create new shared job
+                job_id = str(uuid.uuid4())
+                new_job = SharedJobs(
+                    id=job_id,
+                    jobTitle=request_data["jobTitle"],
+                    companyName=request_data["companyName"],
+                    location=request_data.get("location", ""),
+                    jobLink=request_data.get("jobLink", ""),
+                    postedBy=userid,
+                    appliedBy=1  # current user is the only one who has applied to the job
+                )
+                new_job.save()
+
+                return jsonify(current_application), 200
+                
+            except:
+                return jsonify(current_application), 200
+
         except:
             return jsonify({"error": "Internal server error"}), 500
 
@@ -656,6 +690,68 @@ def create_app():
             return jsonify(app_to_delete), 200
         except:
             return jsonify({"error": "Internal server error"}), 500
+        
+    @app.route("/wishlist", methods=["POST"])
+    def add_application_as_wishlist():
+        """
+        Add a shared job to the user's wishlist using only the job ID
+        This endpoint retrieves the job details from the SharedJobs collection
+        and adds it to the user's applications with status "1" (wishlist)
+
+        Expected request body: {"jobId": "some-uuid-here"}
+
+        :return: JSON object with the added application or error message
+        """
+        
+        try:
+            # Get user ID from authentication token
+            userid = get_userid_from_header()
+            
+            # Parse request data
+            try:
+                request_data = json.loads(request.data)
+                job_id = request_data.get("jobId")
+                
+                if not job_id:
+                    return jsonify({"error": "Missing jobId in request"}), 400
+                    
+            except Exception as e:
+                return jsonify({"error": f"Invalid request format: {str(e)}"}), 400
+                
+            # Find the shared job by ID
+            shared_job = SharedJobs.objects(id=job_id).first()
+            if not shared_job:
+                return jsonify({"error": "Job not found in shared listings"}), 404
+                
+            # Get the user
+            user = Users.objects(id=userid).first()
+            if not user:
+                return jsonify({"error": "User not found"}), 404
+                
+            # Create new application object with wishlist status
+            current_application = {
+                "id": get_new_application_id(userid),
+                "jobTitle": shared_job.jobTitle,
+                "companyName": shared_job.companyName,
+                "date": datetime.now().strftime("%Y-%m-%d"),  # Current date
+                "jobLink": shared_job.jobLink,
+                "location": shared_job.location,
+                "status": "1",  # 1 stands for wishlist
+            }
+            
+            # Add to user's applications
+            applications = user["applications"] + [current_application]
+            user.update(applications=applications)
+            
+            # Increment the appliedBy counter in shared job
+            shared_job.update(inc__appliedBy=1)
+            
+            return jsonify(current_application), 200
+            
+        except Exception as e:
+            print(f"Error adding to wishlist: {str(e)}")
+            return jsonify({"error": "Internal server error"}), 500
+
 
     @app.route("/resume", methods=["POST"])
     def upload_resume():
@@ -687,6 +783,8 @@ def create_app():
         except Exception as e:
             print(e)
             return jsonify({"error": "Internal server error"}), 500
+
+
 
     @app.route("/resume", methods=["GET"])
     def get_resume():
@@ -876,6 +974,86 @@ def create_app():
         except Exception as e:
             print(f"Error saving analysis: {str(e)}")
             return jsonify({"error": "Internal server error"}), 500
+        
+    
+    @app.route("/jobs/shared", methods=["GET"])
+    def get_shared_jobs():
+        """
+        Gets all shared jobs that the user hasn't applied to yet
+        """
+        try:
+            userid = get_userid_from_header()
+            user = Users.objects(id=userid).first()
+
+            # Get all shared jobs
+            all_shared_jobs = SharedJobs.objects()
+
+            # Filter out jobs the user has already applied to
+            user_applications = [app["companyName"].lower() + ":" + app["jobLink"].lower()
+                              for app in user["applications"]]
+
+            available_jobs = []
+            for job in all_shared_jobs:
+                job_key = job["companyName"].lower() + ":" + job["jobLink"].lower()
+
+                # Check if user hasn't already applied to this job
+                if job_key not in user_applications:
+                    print(f"Found applications {job_key}")
+                    available_jobs.append({
+                        "id": job["id"],
+                        "jobTitle": job["jobTitle"],
+                        "companyName": job["companyName"],
+                        "location": job["location"],
+                        "jobLink": job["jobLink"],
+                        "date": job["postedDate"].strftime("%Y-%m-%d"),
+                        "appliedBy": job["appliedBy"]
+                    })
+
+            return jsonify(available_jobs), 200
+        except Exception as e:
+            print(f"Error getting shared jobs: {str(e)}")
+            return jsonify({"error": "Internal server error"}), 500
+        
+
+    # @app.route("/jobs/share", methods=["POST"])
+    # def share_job():
+    #     """
+    #     Shares a job application with all users
+    #     """
+    #     try:
+    #         userid = get_userid_from_header()
+    #         data = json.loads(request.data)
+
+    #         # Check if job already exists (is this logic correct?)
+    #         existing_job = SharedJobs.objects(
+    #             jobTitle=data["jobTitle"],
+    #             companyName=data["companyName"],
+    #             jobLink=data["jobLink"],
+    #         ).first()
+
+    #         if existing_job:
+    #             return jsonify({"message": "Job already shared", "id": existing_job.id}), 200
+
+    #         # Create new shared job
+    #         job_id = str(uuid.uuid4())
+    #         new_job = SharedJobs(
+    #             id=job_id,
+    #             jobTitle=data["jobTitle"],
+    #             companyName=data["companyName"],
+    #             location=data.get("location", ""),
+    #             jobLink=data.get("jobLink", ""),
+    #             postedBy=userid,
+    #             appliedBy=1  # Add current user to applied list
+    #         )
+    #         new_job.save()
+
+    #         return jsonify({
+    #             "message": "Job shared successfully",
+    #             "id": job_id
+    #         }), 201
+    #     except Exception as e:
+    #         print(f"Error sharing job: {str(e)}")
+    #         return jsonify({"error": "Internal server error"}), 500
 
     return app
 
@@ -1029,6 +1207,19 @@ class Users(db.Document):
         """
         return {"id": self.id, "fullName": self.fullName, "username": self.username}
 
+class SharedJobs(db.Document):
+    """
+    Shared jobs collection. Contains job postings that can be viewed by all users.
+    """
+    id = db.StringField(primary_key=True)   #job id in the recommended jobs section
+    jobTitle = db.StringField(required=True)    # title of the job
+    companyName = db.StringField(required=True) # name of the company where the job is
+    location = db.StringField() #location / region of the job
+    jobLink = db.StringField()  #link to the job posting
+    postedBy = db.IntField(required=True)  # User ID who added this job
+    postedDate = db.DateTimeField(default=datetime.now)
+    appliedBy = db.IntField(default=1)  # number of people who have applied
+    active = db.IntField(default=1) #whether the job is still open or not
 
 def get_new_user_id():
     """
