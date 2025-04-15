@@ -29,7 +29,8 @@ jobs:
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
-        python -m pytest test_app.py -v -s --junitxml=test-report.xml
+        python -m pytest -v -s --junitxml=test-report.xml
+
 
     - name: Upload Test Results
       if: always()
