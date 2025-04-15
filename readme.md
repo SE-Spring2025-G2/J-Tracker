@@ -114,7 +114,7 @@ Users can add or update information to their profile, such as their personal inf
 
 We've introduced a new, collaborative feature to help all of users by making each of them a contributor to the system. Now, when somebody using the application finds a new oppurtunity, it will be recommended to others with a similar profile and interests, allowing more key information to spread faster in the community.
 
-<p align="center"><img width="700"  src="./resources/recc_job.png></p>
+<p align="center"><img width="700"  src="./resources/recc_job.png"></p>
 
 
 ### ApplicationPage
