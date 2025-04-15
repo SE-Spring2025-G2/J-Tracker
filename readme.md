@@ -1,32 +1,32 @@
 # J-Tracker - Your Job Tracking Assistant
 
 [![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
-[![GitHub license](https://img.shields.io/github/license/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/blob/main/LICENSE)
+	![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+[![GitHub license](https://img.shields.io/github/license/SE-Spring2025-G2/J-Tracker)](https://github.com/SE-Spring2025-G2/J-Tracker/blob/main/LICENSE)
 [![DOI](https://zenodo.org/badge/426259091.svg)](https://zenodo.org/badge/latestdoi/426259091)
-[![codecov](https://codecov.io/gh/ncsu-csc-510/Project2/branch/main/graph/badge.svg)](https://codecov.io/gh/kingan1/application-tracking-system)
-[![GitHub issues](https://img.shields.io/github/issues/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/issues)
-[![Github closes issues](https://img.shields.io/github/issues-closed-raw/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/issues?q=is%3Aissue+is%3Aclosed)
+[![codecov](https://codecov.io/gh/SE-Spring2025-G2/J-Tracker/branch/main/graph/badge.svg)](https://codecov.io/gh/kingan1/application-tracking-system)
+[![GitHub issues](https://img.shields.io/github/issues/SE-Spring2025-G2/J-Tracker)](https://github.com/SE-Spring2025-G2/J-Tracker/issues)
+[![Github closes issues](https://img.shields.io/github/issues-closed-raw/SE-Spring2025-G2/J-Tracker)](https://github.com/SE-Spring2025-G2/J-Tracker/issues?q=is%3Aissue+is%3Aclosed)
 ![GitHub top language](https://img.shields.io/github/languages/top/ncsu-csc-510/Project2)
 ![Test Status](https://github.com/ncsu-csc-510/Project2/workflows/Test/badge.svg)
-[![GitHub Tag](https://img.shields.io/github/v/tag/ncsu-csc-510/Project2?style=plastic)](https://github.com/ncsu-csc-510/Project2/releases)
-[![GitHub forks](https://img.shields.io/github/forks/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/network)
-[![GitHub stars](https://img.shields.io/github/stars/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/stargazers)
-[![GitHub contributors](https://img.shields.io/github/contributors/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/graphs/contributors)
-[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/ncsu-csc-510/Project2)](https://github.com/ncsu-csc-510/Project2/graphs/commit-activity)
+[![GitHub forks](https://img.shields.io/github/forks/SE-Spring2025-G2/J-Tracker)](https://github.com/SE-Spring2025-G2/J-Tracker/network)
+[![GitHub stars](https://img.shields.io/github/stars/SE-Spring2025-G2/J-Tracker)](https://github.com/SE-Spring2025-G2/J-Tracker/stargazers)
+[![GitHub contributors](https://img.shields.io/github/contributors/SE-Spring2025-G2/J-Tracker)](https://github.com/SE-Spring2025-G2/J-Tracker/graphs/contributors)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/SE-Spring2025-G2/J-Tracker)](https://github.com/SE-Spring2025-G2/J-Tracker/graphs/commit-activity)
 
 [![Collaborators](https://img.shields.io/badge/Collaborators-3-orange.svg?style=flat)](https://github.com/ncsu-csc-510/Project2/graphs/contributors)
 [![Documentation Badge](https://img.shields.io/badge/API_Documentation-pdoc-blue.svg)](https://lemon-desert-093c6c80f.2.azurestaticapps.net/)
 [![Documentation Badge](https://img.shields.io/badge/APP_Documentation-compodoc-blue.svg)](https://victorious-sky-08a81ed0f.2.azurestaticapps.net/)
 
-<p align="center"><img width="700" src="https://github.com/ncsu-csc-510/Project2/blob/main/media/video.gif"></p>
+<!-- <p align="center"><img width="700" src="https://github.com/ncsu-csc-510/Project2/blob/main/media/video.gif"></p> -->
 
 The internship application and job application process is no picnic. Job application management is time-consuming. With the referrals and deadlines, the whole process can get daunting. Our app enables you to track and organize your job application process, and manage it, without the inconvenience of clunky Excel spreadsheets.
 
 Our software maintains a record of the work you have wish-listed. It records those companies that you have applied for and records any rejections. Instead of making the user visit each company's website for prospects, our software enables the applicant to look for them directly using simple keywords. Any possible offer of work may then be wish-listed by the applicant.
 
-## New Features in Project2
+## New Features in Version 3.0!
 
-🎥[Project2 Demo Video](https://drive.google.com/file/d/1dzq3PYMK-vSxBg1yp8uFzMbsFr2sq76F/view?usp=drive_link) 
+🎥[Project2 Demo Video](https://www.youtube.com/watch?v=o2lTHHnvqiY) 
 
 ## ⭐ Highlight of Project2 ⭐
 ### Dockerization 🗃️
@@ -81,6 +81,10 @@ The Google Authorization Login:
 
 <p align="center"><img width="700" src="./resources/googleauth.png"></p>
 
+After logging in for the first time, the user is presenseted with a welcome screen and given fields to enter their details. They're also given a guided walkthrough of the system to ensure they can make the most out of it.
+
+<p align="center"><img width="700" src="./resources/intro_walkthru.png"></p>
+
 ### HomeScreen - Profile Page
 
 After Logging In, the Profile page of the user is displayed where the user details such as Name, Institution, email, phone number, address, skills, and more are shown.
@@ -96,7 +100,6 @@ Users can add or update information to their profile, such as their personal inf
 
 3. In the earlier versions of the software the skills were not saved for when the user logs in again. We have solved this bug. Now the users can see their previous preferences after logging in again. They can then update these without any hassle. We have made sure that our database and our code takes care of managing this
 
-4. We have incorporated an AI model to recommend jobs to the user. Instead of just fetching jobs from google, our code will now based off the preferences of the user, their skills, their experience will curate job opportunities for the user. In this way, the user is only recommended jobs that fit their application requirements and they don’t have to waste time reading the job description thoroughly
 
 
 
@@ -107,18 +110,20 @@ Users can add or update information to their profile, such as their personal inf
 <p align="center"><img width="700" src="https://github.com/ncsu-csc-510/Project2/blob/main/media/media6.png"></p>
 
 
+### Community-sourced Job Listings
+
+We've introduced a new, collaborative feature to help all of users by making each of them a contributor to the system. Now, when somebody using the application finds a new oppurtunity, it will be recommended to others with a similar profile and interests, allowing more key information to spread faster in the community.
+
+<p align="center"><img width="700"  src="./resources/recc_job.png></p>
+
 
 ### ApplicationPage
 
 The user is able to see different saved applications - Waitlisted applications, Waiting for Refereals, Applied Jobs, Application Status. The user is also able to add more jobs to track using this screen.
+We've split the entries based on status to let you check how many you have with a quick glance. We also now let you search entries by the company name, meaning you won't have to keep scrolling to find the right one.
 
-<p align="center"><img width="700" src="./resources/AddApplicationpage.png"></p>
+<p align="center"><img width="700" src="./resources/application_sorting.png"></p>
 
-### MatchesPage
-
-Here, user is able to see different jobs which would be recommended to them according to their profile and also their interest. User can apply for that job from this page as well.
-
-<p align="center"><img width="700" src="./resources/Recommendjobspage.png"></p>
 
 ### FinalViewOfDashboard
 
@@ -127,10 +132,22 @@ Here, user is able to see different jobs which would be recommended to them acco
 
 ## Future Scope:
 
-- AI Job Matching: Advanced AI predicts best-fit jobs and offers real-time market insights based on user skills.
-- Automated Tracking: AI tracks application statuses via parsing and updates progress from job portals.
-- Interview Prep: AI-driven mock interviews with real-time feedback and role-specific questions.
-- Multi-Platform Sync: Syncs with LinkedIn, job boards, and ATS; mobile app for real-time updates.
+- Custom tags and notes: Allow users to create custom
+tags and attach notes to each job for more personalized
+tracking (ex. recruiter contacts, comments, or tasks).
+- Profile picture upload: Introduce profile photo support to
+personalize user profiles and enhance community
+features like networking and referrals.
+- Notifications: Enable optional email or in-app reminders
+for deadlines, follow-ups, or referral requests to help
+users stay on top of every opportunity.
+- Resume version management: Enable users to upload
+and manage multiple versions of their resume and
+associate them with different job applications.
+- Prep Space: A community forum where users can share
+their interview experience and help others in the process
+of applying.
+
 
 ## Technologies Used:
 
@@ -207,9 +224,10 @@ mongodb
    ```
 4. In app.py set 'host' string to your MongoDB Atlas connection string. Replace the username and password with {username} and {password} respectively
 6. For testing through CI to function as expected, repository secrets will need to be added through the settings. Create individual secrets with the following keys/values:
-
-MONGO_USER: <MongoDB Atlas cluster username>
-MONGO_PASS: <MongoDB Atlas cluster password>
+    ```
+    MONGO_USER: <MongoDB Atlas cluster username>
+    MONGO_PASS: <MongoDB Atlas cluster password>
+    ```
 
 ## License
 
@@ -219,8 +237,15 @@ The project is licensed under the [MIT](https://choosealicense.com/licenses/mit/
 
 Please see our CONTRIBUTING.md for instructions on how to contribute to the repository and assist us in improving the project.
 
-## Team Members
+## Team Members for Version 3.0
 
+- Ayush Gala
+- Ayush Pathak
+- Keyur Gondhalekar
+
+## Past contributors:
 - Anchal Kakadia
 - Aniruddha Kulkarni
 - Aranya Venugopal
+
+<p align="center">Made with ❤️ on GitHub.</p>
