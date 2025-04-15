@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 import os
 from fake_useragent import UserAgent
 import pandas as pd
-from .jobsearch import get_ai_job_recommendations
+# from .jobsearch import get_ai_job_recommendations
 from pypdf import PdfReader
 import google.generativeai as genai
 import yaml
@@ -41,13 +41,6 @@ def create_app():
     # # make flask support CORS
     CORS(app)
 
-    # get all the variables from the application.yml file
-    # with open("application.yml") as f:
-    #     info = yaml.load(f, Loader=yaml.FullLoader)
-    #     GOOGLE_CLIENT_ID = info["GOOGLE_CLIENT_ID"]
-    #     GOOGLE_CLIENT_SECRET = info["GOOGLE_CLIENT_SECRET"]
-    #     CONF_URL = info["CONF_URL"]
-    #     app.secret_key = info['SECRET_KEY']
 
     with open("application.yml") as f:
         info = yaml.load(f, Loader=yaml.FullLoader)
@@ -340,53 +333,6 @@ def create_app():
         except Exception as err:
             print(f"Error in getRecommendations: {str(err)}")
             return jsonify({"error": "Internal server error"}), 500
-    
-    # @app.route("/users/login", methods=["POST"])
-    # def login():
-    #     """
-    #     Logs in the user and creates a new authorization token and stores it in the database
-    #     """
-    #     try:
-    #         data = json.loads(request.data)
-
-    #         if "username" not in data or "password" not in data:
-    #             return jsonify({"error": "Missing username or password"}), 400
-
-    #         # Find user by username
-    #         user = Users.objects(username=data["username"]).first()
-    #         if not user:
-    #             print("❌ User not found:", data["username"])
-    #             return jsonify({"error": "User not found"}), 400
-
-    #         # Debug: Print stored and entered password hashes
-    #         entered_password_hash = hashlib.md5(data["password"].encode()).hexdigest()
-    #         print(f"🔍 Entered Hash: {entered_password_hash}")
-    #         print(f"🔍 Stored Hash: {user.password}")
-
-    #         # Compare hashed password
-    #         if user.password != entered_password_hash:
-    #             print("❌ Password does not match")
-    #             return jsonify({"error": "Wrong username or password"}), 400
-
-    #         # Generate session token
-    #         expiry = datetime.now() + timedelta(days=1)
-    #         expiry_str = expiry.strftime("%m/%d/%Y, %H:%M:%S")
-    #         token = f"{user.id}.{uuid.uuid4()}"
-
-    #         # Store token
-    #         user.authTokens.append({"token": token, "expiry": expiry_str})
-    #         user.save()
-
-    #         print("✅ Login successful")
-    #         return jsonify({
-    #             "message": "Login successful",
-    #             "token": token,
-    #             "expiry": expiry_str
-    #         }), 200
-
-    #     except Exception as e:
-    #         print("❌ Error in login:", e)
-    #         return jsonify({"error": "Internal server error"}), 500
 
     @app.route("/users/login", methods=["POST"])
     def login():
@@ -567,32 +513,6 @@ def create_app():
             3. Detailed and actionable
             4. Realistic and practical
             """
-
-        # replacing earlier ChatGPT call with Gemini-2.0-flash
-
-            # headers = {
-            #     "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
-            #     "Content-Type": "application/json"
-            # }
-            
-            # data = {
-            #     "model": "gpt-3.5-turbo",
-            #     "messages": [
-            #         {
-            #             "role": "system",
-            #             "content": "You are a career advisor. Return only JSON without any markdown formatting."
-            #         },
-            #         {"role": "user", "content": prompt}
-            #     ],
-            #     "temperature": 0.7,
-            #     "response_format": { "type": "json_object" }
-            # }
-
-            # response = requests.post(
-            #     "https://api.openai.com/v1/chat/completions",
-            #     headers=headers,
-            #     json=data
-            # )
             
             #Gemini API call
             response = model.generate_content(prompt)
@@ -614,94 +534,6 @@ def create_app():
                 print(f"Error: Gemini response was not valid JSON: {output}")
                 return jsonify({"error": "Gemini response was not valid JSON"}), 500
             
-        except Exception as e:
-            print(f"Error in search: {str(e)}")
-            return jsonify({"error": "Internal server error"}), 500
-            
-    @app.route("/search", methods=["GET"])
-    def search_jobs():
-        try:
-            job_title = request.args.get('keywords', '')
-            if not job_title:
-                return jsonify({"error": "Job title is required"}), 400
-
-            # Create detailed prompt for job insights
-            prompt = f"""
-                Provide comprehensive insights for the role: {job_title}
-
-                Return a JSON object with this exact structure:
-                {{
-                    "roleOverview": "string describing the role",
-                    "technicalSkills": [
-                        {{
-                            "category": "category name",
-                            "tools": ["tool1", "tool2"]
-                        }}
-                    ],
-                    "softSkills": ["skill1", "skill2"],
-                    "certifications": [
-                        {{
-                            "name": "cert name",
-                            "provider": "provider name",
-                            "level": "difficulty level"
-                        }}
-                    ],
-                    "projectIdeas": [
-                        {{
-                            "title": "project name",
-                            "description": "project description",
-                            "technologies": ["tech1", "tech2"]
-                        }}
-                    ],
-                    "industryTrends": ["trend1", "trend2"],
-                    "salaryRange": {{
-                        "entry": "entry level range",
-                        "mid": "mid level range",
-                        "senior": "senior level range"
-                    }},
-                    "learningResources": [
-                        {{
-                            "name": "resource name",
-                            "type": "resource type",
-                            "cost": "free/paid",
-                            "url": "resource url"
-                        }}
-                    ]
-                }}
-                """
-
-            # OpenAI API call
-            headers = {
-                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
-                "Content-Type": "application/json"
-            }
-            
-            data = {
-                "model": "gpt-3.5-turbo",
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "You are a career advisor and industry expert providing detailed insights about tech roles."
-                    },
-                    {"role": "user", "content": prompt}
-                ],
-                "temperature": 0.7,
-                "response_format": { "type": "json_object" }
-            }
-
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json=data
-            )
-
-            if response.status_code == 200:
-                result = response.json()
-                insights = json.loads(result['choices'][0]['message']['content'])
-                return jsonify(insights), 200
-            else:
-                return jsonify({"error": "Failed to get insights"}), 500
-
         except Exception as e:
             print(f"Error in search: {str(e)}")
             return jsonify({"error": "Internal server error"}), 500
@@ -910,10 +742,6 @@ def create_app():
             
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-2.0-flash')
-            # headers = {
-            #     "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
-            #     "Content-Type": "application/json"
-            # }
             
             prompt = f"""
             Parse this resume text and extract key information in JSON format. Enter pure JSON without any extra characters or pretty formatting:
@@ -927,20 +755,6 @@ def create_app():
                 "certifications": ["cert1", "cert2"]
             }}
             """
-            
-            #replacing earlier ChatGPT call with Gemini-2.0-flash
-            # response = requests.post(
-            #     "https://api.openai.com/v1/chat/completions",
-            #     headers=headers,
-            #     json={
-            #         "model": "gpt-3.5-turbo",
-            #         "messages": [
-            #             {"role": "system", "content": "You are a resume parser."},
-            #             {"role": "user", "content": prompt}
-            #         ],
-            #         "temperature": 0.7
-            #     }
-            # )
 
             response = model.generate_content(prompt)
 
@@ -992,20 +806,6 @@ def create_app():
                 "recommendations": ["rec1", "rec2", ...]
             }}
             """
-            
-            # replacing earlier ChatGPT call with Gemini-2.0-flash
-            # response = requests.post(
-            #     "https://api.openai.com/v1/chat/completions",
-            #     headers=headers,
-            #     json={
-            #         "model": "gpt-3.5-turbo",
-            #         "messages": [
-            #             {"role": "system", "content": "You are a resume analyzer."},
-            #             {"role": "user", "content": prompt}
-            #         ],
-            #         "temperature": 0.7
-            #     }
-            # )
             
             response = model.generate_content(prompt)
             comparison = response.text
@@ -1264,17 +1064,6 @@ def get_new_application_id(user_id):
         new_id = max(new_id, a["id"])
 
     return new_id + 1
-
-# def build_preflight_response():
-    # response = make_response()
-    # response.headers.add("Access-Control-Allow-Origin", "*")
-    # response.headers.add('Access-Control-Allow-Headers', "*")
-    # response.headers.add('Access-Control-Allow-Methods', "*")
-    # return response
-# def build_actual_response(response):
-    # response.headers.add("Access-Control-Allow-Origin", "*")
-    # return response
-
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
