@@ -1,4 +1,4 @@
-name: Run Pytest for test_akulka24
+name: Run Pytest for test_app
 
 on:
   push:
@@ -17,19 +17,21 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.8'
+        python-version: '3.9'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pytest pymongo flask requests
+        pip install -r backend/requirements.txt
 
     - name: Run Pytest
       env:
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
-        python -m pytest test_akulka24.py -v -s --junitxml=test-report.xml
+        python -m pytest -v -s --junitxml=test-report.xml
+
 
     - name: Upload Test Results
       if: always()
