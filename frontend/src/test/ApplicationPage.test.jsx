@@ -112,3 +112,20 @@ test('clicking search button does not crash', () => {
 	fireEvent.click(screen.getByText('Search'));
 });
 
+// 16. Renders initials in profile
+test('profile shows initials', () => {
+	const profile = { fullName: 'John Doe', skills: [], job_levels: [], locations: [] };
+	render(<ProfilePage profile={profile} updateProfile={() => {}} />);
+	expect(screen.getByText('JD')).toBeInTheDocument();
+});
+
+// 17. ApplicationList renders two applications
+test('renders two applications', () => {
+	const applications = [
+		{ id: 1, jobTitle: 'Dev', companyName: '', location: '', date: '', status: '1' },
+		{ id: 2, jobTitle: 'Tester', companyName: '', location: '', date: '', status: '2' }
+	];
+	render(<ApplicationPage applicationList={applications} handleCardClick={() => {}} selectedApplication={null} handleUpdateDetails={() => {}} handleDeleteApplication={() => {}} />);
+	expect(screen.getByText('Dev')).toBeInTheDocument();
+	expect(screen.getByText('Tester')).toBeInTheDocument();
+});
