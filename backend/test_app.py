@@ -17,7 +17,7 @@ from app import create_app, Users
 # eliminating the possibility of carry-over from previous tests,
 # unless defined as such.
 # This fixture receives the client returned from create_app
-# in app.py
+# in app.py. add
 @pytest.fixture
 def client():
     """
