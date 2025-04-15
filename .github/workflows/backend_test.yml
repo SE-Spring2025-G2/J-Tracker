@@ -22,4 +22,7 @@ jobs:
 
       - name: Run tests inside container
         run: |
-          docker run --rm backend-test-image pytest test_app.py -v -s --junitxml=test-report.xml
+          docker run --rm backend-test-image /bin/bash -c "
+            pip install pytest &&
+            pytest test_app.py -v -s --junitxml=test-report.xml
+          "
