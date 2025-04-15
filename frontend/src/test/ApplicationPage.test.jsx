@@ -129,3 +129,25 @@ test('renders two applications', () => {
 	expect(screen.getByText('Dev')).toBeInTheDocument();
 	expect(screen.getByText('Tester')).toBeInTheDocument();
 });
+
+
+// 18. Signup tab stays visible
+test('signup tab is visible', () => {
+	render(<LoginPage side={() => {}} />);
+	expect(screen.getByText('Signup')).toBeInTheDocument();
+});
+
+// 19. Search input accepts text
+test('user can type in search input', () => {
+	render(<SearchPage />);
+	const input = screen.getByPlaceholderText(/Enter job title/i);
+	fireEvent.change(input, { target: { value: 'Engineer' } });
+	expect(input.value).toBe('Engineer');
+});
+
+// 20. Renders application status "Rejected"
+test('application with status 4 shows Rejected', () => {
+	const applications = [{ id: 1, jobTitle: '', companyName: '', location: '', date: '', status: '4' }];
+	render(<ApplicationPage applicationList={applications} handleCardClick={() => {}} selectedApplication={null} handleUpdateDetails={() => {}} handleDeleteApplication={() => {}} />);
+	expect(screen.getByText('Rejected')).toBeInTheDocument();
+});
