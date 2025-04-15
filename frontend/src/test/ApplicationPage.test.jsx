@@ -85,3 +85,16 @@ test('renders application company', () => {
 	expect(screen.getByText('Meta')).toBeInTheDocument();
 });
 
+// 12. Application list renders location
+test('renders application location', () => {
+	const applications = [{ id: 1, jobTitle: '', companyName: '', location: 'Remote', date: '', status: '1' }];
+	render(<ApplicationPage applicationList={applications} handleCardClick={() => {}} selectedApplication={null} handleUpdateDetails={() => {}} handleDeleteApplication={() => {}} />);
+	expect(screen.getByText('Remote')).toBeInTheDocument();
+});
+
+// 13. Application list renders status label
+test('renders status label', () => {
+	const applications = [{ id: 1, jobTitle: '', companyName: '', location: '', date: '', status: '3' }];
+	render(<ApplicationPage applicationList={applications} handleCardClick={() => {}} selectedApplication={null} handleUpdateDetails={() => {}} handleDeleteApplication={() => {}} />);
+	expect(screen.getByText('Applied')).toBeInTheDocument();
+});
