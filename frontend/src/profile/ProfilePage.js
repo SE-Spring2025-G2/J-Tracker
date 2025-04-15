@@ -105,7 +105,7 @@ const ProfilePage = (props) => {
 	return (
 		<div className='container-fluid' style={{ marginLeft: '6%', marginTop: '2%' }}>
 			<div className='row gx-5'>
-				<div className='col-3'>
+				<div className='col-3 profile-section'>
 					<div
 						className='card p-4 mb-4'
 						style={{
@@ -291,7 +291,7 @@ const ProfilePage = (props) => {
 					</div>
 
 					{/* Applications Card */}
-					<div className='card p-4 mb-4' style={{ 
+					<div className='card p-4 mb-4 applications-section' style={{ 
 						boxShadow: '0px 5px 12px 0px rgba(0,0,0,0.1)',
 						marginRight: '20px'
 					}}>
@@ -359,7 +359,7 @@ const ProfilePage = (props) => {
 					</div>
 				</div>
 				<div className='col-4'>
-					<div className='card' style={{ 
+					<div className='card analyses-section' style={{ 
 						boxShadow: '0px 5px 12px 0px rgba(0,0,0,0.1)',
 						height: 'calc(100vh - 40px)',
 						overflowY: 'auto'

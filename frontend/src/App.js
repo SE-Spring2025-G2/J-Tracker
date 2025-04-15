@@ -7,8 +7,10 @@ import SearchPage from './search/SearchPage';
 import LoginPage from './login/LoginPage';
 import ManageResumePage from './resume/ManageResumePage';
 import ProfilePage from './profile/ProfilePage';
+import OnBoardingForm from './onboarding/OnBoardingForm';
 import axios from 'axios';
 import MatchesPage from './matches/MatchesPage';
+import Joyride from 'react-joyride';
 
 export default class App extends React.Component {
 	constructor(props) {
@@ -25,10 +27,26 @@ export default class App extends React.Component {
 			currentPage: <LoginPage />,
 			mapRouter: mapRouter,
 			sidebar: false,
-			userProfile: null
+			userProfile: null,
+			showOnboarding: false,
+			runTour: false,
+			steps: [
+				{
+					target: '.sidebar',
+					content: 'This is your navigation menu. Use it to access different areas of the application.',
+					placement: 'right',
+					disableBeacon: true
+				},
+				{
+					target: '.main',
+					content: 'This main area displays your current view based on what you select from the sidebar.',
+					placement: 'left'
+				}
+			]
 		};
 		this.sidebarHandler = this.sidebarHandler.bind(this);
 		this.updateProfile = this.updateProfile.bind(this);
+		this.completeOnboarding = this.completeOnboarding.bind(this);
 	}
 
 	updateProfile = (profile) => {
@@ -42,28 +60,50 @@ export default class App extends React.Component {
 	async componentDidMount() {
 		if (localStorage.getItem('token')) {
 			const userId = localStorage.getItem('userId');
-			await axios
-				.get('http://application-tracking-system-api-1:5000/getProfile', {
+			try {
+				const res = await axios.get('http://127.0.0.1:5000/getProfile', {
 					headers: {
 						userid: userId,
 						Authorization: `Bearer ${localStorage.getItem('token')}`
 					}
-				})
-				.then((res) => {
-					this.sidebarHandler(res.data);
-				})
-				.catch((err) => console.log(err.message));
+				});
+				console.log("Profile data from API:", res.data);
+				this.sidebarHandler(res.data);
+			} catch (err) {
+				console.error("Error fetching profile:", err.message);
+				// Try to use stored profile from localStorage as fallback
+				const storedProfile = localStorage.getItem('userProfile');
+				if (storedProfile) {
+					console.log("Using stored profile from localStorage");
+					this.sidebarHandler(JSON.parse(storedProfile));
+				}
+			}
 		}
 	}
 
 	sidebarHandler = (user) => {
-		console.log(user);
+		console.log("User data received:", user);
+		
+		// Check if this is a new user who needs onboarding
+		const isNewUser = !user.skills || !Array.isArray(user.skills) || user.skills.length === 0;
+		console.log("Is new user:", isNewUser, "Skills:", user.skills);
+		
 		this.setState({
-			currentPage: (
-				<ProfilePage profile={user} updateProfile={this.updateProfile.bind(this)} />
-			),
 			sidebar: true,
-			userProfile: user
+			userProfile: user,
+			showOnboarding: isNewUser,
+			currentPage: isNewUser ? 
+				<OnBoardingForm profile={user} completeOnboarding={this.completeOnboarding} /> : 
+				<ProfilePage profile={user} updateProfile={this.updateProfile.bind(this)} />
+		});
+	};
+	
+	completeOnboarding = (updatedProfile) => {
+		this.setState({
+			showOnboarding: false,
+			userProfile: updatedProfile,
+			currentPage: <ProfilePage profile={updatedProfile} updateProfile={this.updateProfile.bind(this)} />,
+			runTour: true
 		});
 	};
 
@@ -92,7 +132,32 @@ export default class App extends React.Component {
 
 	render() {
 		var app;
-		// console.log(this.state.sidebar)
+		
+		// Enhanced tour steps with more detailed information
+		const appSteps = [
+			{
+				target: '.sidebar',
+				content: 'This is your navigation menu. Use it to access different areas of the application.',
+				placement: 'right',
+				disableBeacon: true
+			},
+			{
+				target: '.profile-section',
+				content: 'View and update your profile information here. Add your skills and preferences to get better job recommendations.',
+				placement: 'left'
+			},
+			{
+				target: '.applications-section',
+				content: 'Keep track of all your job applications in one place. See status updates and organize your job search.',
+				placement: 'bottom'
+			},
+			{
+				target: '.analyses-section',
+				content: 'Review past analyses of how well your profile matches with job requirements.',
+				placement: 'left'
+			}
+		];
+		
 		if (this.state.sidebar) {
 			app = (
 				<div className='main-page'>
@@ -109,13 +174,29 @@ export default class App extends React.Component {
 								>
 									Application Tracking System
 								</h1>
-								{/* <span className="btn-icon ">
-                <button className="btn btn-danger btn-icon"><i className="fas fa-plus"></i>&nbsp;New</button>
-              </span> */}
 							</div>
 							{this.state.currentPage}
 						</div>
 					</div>
+					
+					{/* Joyride tour */}
+					<Joyride
+						steps={appSteps}
+						run={this.state.runTour}
+						continuous={true}
+						showProgress={true}
+						showSkipButton={true}
+						styles={{
+							options: {
+								primaryColor: '#296E85'
+							}
+						}}
+						callback={(data) => {
+							if (data.status === 'finished' || data.status === 'skipped') {
+								this.setState({ runTour: false });
+							}
+						}}
+					/>
 				</div>
 			);
 		} else {
@@ -134,9 +215,6 @@ export default class App extends React.Component {
 								Application Tracking System
 							</h1>
 							<div className=''>
-								{/* <span className="btn-icon ">
-              <button className="btn btn-danger btn-icon"><i className="fas fa-plus"></i>&nbsp;New</button>
-            </span> */}
 							</div>
 							<LoginPage side={this.sidebarHandler} />
 						</div>

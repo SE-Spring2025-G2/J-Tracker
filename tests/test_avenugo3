@@ -152,11 +152,12 @@ def test_get_resume_not_found():
     assert response.status_code == 400
     assert "error" in response.json
 
-# Tests search with no keywords
-def test_search_no_keywords():
-    response = client.get('/search')
-    assert response.status_code == 400
-    assert "error" in response.json
+# the search API endpoint is deprecated. this test has been removed
+# # Tests search with no keywords
+# def test_search_no_keywords():
+#     response = client.get('/search')
+#     assert response.status_code == 400
+#     assert "error" in response.json
 
 # Tests if logout is a success
 def test_logout_success():
@@ -167,11 +168,12 @@ def test_logout_success():
     )
     assert response.status_code == 200
 
-# Tests for error code if search had no parameters
-def test_search_no_parameters():
-    response = client.get('/search')
-    assert response.status_code == 400
-    assert "error" in response.json
+# the search API endpoint is deprecated. this test has been removed
+# # Tests for error code if search had no parameters
+# def test_search_no_parameters():
+#     response = client.get('/search')
+#     assert response.status_code == 400
+#     assert "error" in response.json
 
 # Tests if the API correctly handles job application requests with missing fields.
 def test_add_application_missing_fields():

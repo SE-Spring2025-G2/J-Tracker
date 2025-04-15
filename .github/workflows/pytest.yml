@@ -27,7 +27,7 @@ jobs:
     - name: Run Pytest
       env:
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
         python -m pytest test_akulka24.py -v -s --junitxml=test-report.xml
 

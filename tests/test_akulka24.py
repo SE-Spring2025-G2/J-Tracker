@@ -9,9 +9,9 @@ from backend.jobsearch import get_ai_job_recommendations
 
 # ------------------------ TEST 1: AI Job Recommendations ------------------------
 def test_matching_jobs_skills_and_experience():
-    api_key = os.environ.get('OPENAI_API_KEY')
+    api_key = os.environ.get('GEMINI_API_KEY')
     if not api_key:
-        pytest.skip("OPENAI_API_KEY not found in environment variables")
+        pytest.skip("GEMINI_API_KEY not found in environment variables")
 
     skills = [{"value": "Python", "label": "Python"}, {"value": "JavaScript", "label": "JavaScript"}]
     job_levels = [{"value": "Entry-Level", "label": "Entry-Level"}, {"value": "Junior", "label": "Junior"}]
@@ -69,9 +69,9 @@ def test_login_fail_wrong_password(test_client):
 
 # ------------------------ TEST 5: AI Job Recommendations API ------------------------
 def test_ai_job_recommendations_response():
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        pytest.skip("OPENAI_API_KEY not found in environment variables.")
+        pytest.skip("GEMINI_API_KEY not found in environment variables.")
     skills = [{"value": "Python", "label": "Python"}]
     job_levels = [{"value": "Entry-Level", "label": "Entry-Level"}]
     locations = [{"value": "Remote", "label": "Remote"}]
@@ -80,7 +80,7 @@ def test_ai_job_recommendations_response():
 
 # ------------------------ TEST 6: API Key Validation ------------------------
 def test_api_key_exists():
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GEMINI_API_KEY")
     assert api_key is not None
 
 if __name__ == "__main__":
