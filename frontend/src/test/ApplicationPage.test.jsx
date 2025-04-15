@@ -32,3 +32,22 @@ test('clicking signup tab reveals signup form', () => {
 	fireEvent.click(screen.getByText('Signup'));
 	expect(screen.getByText('Sign Up')).toBeInTheDocument();
 });
+
+
+// 5. Profile displays full name
+test('renders profile full name', () => {
+	render(<ProfilePage profile={{ fullName: 'Alice' }} updateProfile={() => {}} />);
+	expect(screen.getByText('Alice')).toBeInTheDocument();
+});
+
+// 6. Profile renders skills
+test('renders user skills', () => {
+	const profile = {
+		fullName: '',
+		skills: [{ label: 'React', value: 'react' }],
+		job_levels: [], locations: []
+	};
+	render(<ProfilePage profile={profile} updateProfile={() => {}} />);
+	expect(screen.getByText('React')).toBeInTheDocument();
+});
+
