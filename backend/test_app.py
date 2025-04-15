@@ -496,50 +496,52 @@ def test_delete_nonexistent_application(client, user):
     assert "error" in result
     assert result["error"] == "Application not found"
 
-
-# 9. Test search endpoint
-def test_search_functionality(client, monkeypatch):
-    """
-    Tests the search endpoint with mocked response
+"""
+/search API endpoint has been deprecated. Removing this test from the CI pipeline 
+"""
+# # 9. Test search endpoint
+# def test_search_functionality(client, monkeypatch):
+#     """
+#     Tests the search endpoint with mocked response
     
-    :param client: mongodb client
-    :param monkeypatch: pytest monkeypatch
-    """
-    # Mock the OpenAI API response
-    class MockResponse:
-        def __init__(self, status_code, json_data):
-            self.status_code = status_code
-            self.json_data = json_data
+#     :param client: mongodb client
+#     :param monkeypatch: pytest monkeypatch
+#     """
+#     # Mock the OpenAI API response
+#     class MockResponse:
+#         def __init__(self, status_code, json_data):
+#             self.status_code = status_code
+#             self.json_data = json_data
             
-        def json(self):
-            return self.json_data
+#         def json(self):
+#             return self.json_data
     
-    mock_ai_response = {
-        "choices": [
-            {
-                "message": {
-                    "content": '{"roleOverview": "Test overview", "technicalSkills": [{"category": "Core Skills", "tools": ["Python", "Java"]}], "softSkills": ["Communication"], "certifications": [{"name": "Test Cert", "provider": "Test Provider", "level": "Beginner"}], "industryTrends": ["Trend 1"], "salaryRange": {"entry": "$60k", "mid": "$80k", "senior": "$120k"}, "learningResources": [{"name": "Course", "type": "Online", "cost": "Free", "url": "https://example.com"}], "projectIdeas": [{"title": "Project 1", "description": "Description", "technologies": ["Tech 1"]}]}'
-                }
-            }
-        ]
-    }
+#     mock_ai_response = {
+#         "choices": [
+#             {
+#                 "message": {
+#                     "content": '{"roleOverview": "Test overview", "technicalSkills": [{"category": "Core Skills", "tools": ["Python", "Java"]}], "softSkills": ["Communication"], "certifications": [{"name": "Test Cert", "provider": "Test Provider", "level": "Beginner"}], "industryTrends": ["Trend 1"], "salaryRange": {"entry": "$60k", "mid": "$80k", "senior": "$120k"}, "learningResources": [{"name": "Course", "type": "Online", "cost": "Free", "url": "https://example.com"}], "projectIdeas": [{"title": "Project 1", "description": "Description", "technologies": ["Tech 1"]}]}'
+#                 }
+#             }
+#         ]
+#     }
     
-    def mock_post(*args, **kwargs):
-        return MockResponse(200, mock_ai_response)
+#     def mock_post(*args, **kwargs):
+#         return MockResponse(200, mock_ai_response)
     
-    monkeypatch.setattr(requests, "post", mock_post)
+#     monkeypatch.setattr(requests, "post", mock_post)
     
-    # Test search endpoint
-    rv = client.get("/search?keywords=Python Developer")
+#     # Test search endpoint
+#     rv = client.get("/search?keywords=Python Developer")
     
-    assert rv.status_code == 200
-    result = json.loads(rv.data.decode("utf-8"))
+#     assert rv.status_code == 200
+#     result = json.loads(rv.data.decode("utf-8"))
     
-    assert "roleOverview" in result
-    assert "technicalSkills" in result
-    assert "softSkills" in result
-    assert "certifications" in result
-    assert "salaryRange" in result
+#     assert "roleOverview" in result
+#     assert "technicalSkills" in result
+#     assert "softSkills" in result
+#     assert "certifications" in result
+#     assert "salaryRange" in result
 
 
 # 10. Test resume upload with invalid data

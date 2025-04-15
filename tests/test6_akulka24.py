@@ -1,13 +1,16 @@
-import pytest
-import os
+"""
+THIS TEST HAS BEEN DEPRECATED DUE TO REMOVAL OF ALL OPENAI APIs. Refer to latest GEMINI BASED FEATURE DOCUMENTATION FOR MORE DETAILS
+"""
+# import pytest
+# import os
 
-def test_api_key_exists():
-    """Test that OPENAI_API_KEY is set in the environment."""
+# def test_api_key_exists():
+#     """Test that OPENAI_API_KEY is set in the environment."""
     
-    api_key = os.getenv("OPENAI_API_KEY")
+#     api_key = os.getenv("OPENAI_API_KEY")
     
-    assert api_key is not None, "❌ OPENAI_API_KEY is not set in the environment variables."
-    print("✅ OPENAI_API_KEY is available.")
+#     assert api_key is not None, "❌ OPENAI_API_KEY is not set in the environment variables."
+#     print("✅ OPENAI_API_KEY is available.")
 
-if __name__ == "__main__":
-    pytest.main(["-v", "-s"])
+# if __name__ == "__main__":
+#     pytest.main(["-v", "-s"])
