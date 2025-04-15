@@ -51,3 +51,21 @@ test('renders user skills', () => {
 	expect(screen.getByText('React')).toBeInTheDocument();
 });
 
+
+// 7. Search page input renders
+test('renders search input on search page', () => {
+	render(<SearchPage />);
+	expect(screen.getByPlaceholderText(/Enter job title/i)).toBeInTheDocument();
+});
+
+// 8. Search button exists
+test('renders search button', () => {
+	render(<SearchPage />);
+	expect(screen.getByText('Search')).toBeInTheDocument();
+});
+
+// 9. Renders application page button
+test('renders add application button', () => {
+	render(<ApplicationPage />);
+	expect(screen.getByText('+ Add New Application')).toBeInTheDocument();
+});
