@@ -98,3 +98,17 @@ test('renders status label', () => {
 	render(<ApplicationPage applicationList={applications} handleCardClick={() => {}} selectedApplication={null} handleUpdateDetails={() => {}} handleDeleteApplication={() => {}} />);
 	expect(screen.getByText('Applied')).toBeInTheDocument();
 });
+
+
+// 14. Clicking login does not crash
+test('login button can be clicked', () => {
+	render(<LoginPage side={() => {}} />);
+	fireEvent.click(screen.getByText('Login'));
+});
+
+// 15. Clicking search button triggers event
+test('clicking search button does not crash', () => {
+	render(<SearchPage />);
+	fireEvent.click(screen.getByText('Search'));
+});
+
