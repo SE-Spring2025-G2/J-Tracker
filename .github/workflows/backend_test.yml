@@ -16,6 +16,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      - name: Write .env to backend/
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > backend/.env
+
+      - name: Write application.yml to backend/
+        run: |
+          echo "${{ secrets.APPLICATION_YML }}" > backend/application.yml
+
       - name: Build API container
         run: |
           docker build -f backend/dockerfile.api -t backend-test-image backend/
