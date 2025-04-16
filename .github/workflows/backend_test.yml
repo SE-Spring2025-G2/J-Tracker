@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - 'backend/**'
+  workflow_dispatch: {}  # This enables the manual run option
 
 jobs:
   test-backend:
