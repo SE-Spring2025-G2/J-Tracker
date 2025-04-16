@@ -16,6 +16,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      - name: Write .env to backend/
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > backend/.env
+
+      - name: Write application.yml to backend/
+        run: |
+          echo "${{ secrets.APPLICATION_YML }}" > backend/application.yml
+
       - name: Build API container
         run: |
           docker build -f backend/dockerfile.api -t backend-test-image backend/
@@ -26,3 +34,10 @@ jobs:
             pip install pytest &&
             pytest test_app.py -v -s --junitxml=test-report.xml
           "
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: test-results/

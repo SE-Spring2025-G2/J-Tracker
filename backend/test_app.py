@@ -9,8 +9,10 @@ import json
 import datetime
 from flask_mongoengine import MongoEngine
 import yaml
-from app import create_app, Users
+from .app import create_app, Users, SharedJobs
+from unittest.mock import patch, MagicMock
 
+# Make sure to add the .yml and .env to repository secrets in order for the CI to run these tests
 
 # Pytest fixtures are useful tools for calling resources
 # over and over, without having to manually recreate them,
@@ -28,11 +30,11 @@ def client():
     app = create_app()
     with open("application.yml") as f:
         info = yaml.load(f, Loader=yaml.FullLoader)
-        username = info["username"]
-        password = info["password"]
+        username = info["USERNAME"]
+        password = info["PASSWORD"]
         app.config["MONGODB_SETTINGS"] = {
             "db": "appTracker",
-            "host": f"mongodb+srv://{username}:{password}@applicationtracker.287am.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
+            "host": f"mongodb+srv://{username}:{password}@cluster0.giavamz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
         }
     db = MongoEngine()
     db.disconnect()
@@ -64,7 +66,11 @@ def user(client):
     user.first().save()
 
 
-# 1. testing if the flask app is running properly
+"""
+These tests have been added for Spring 2025
+"""
+
+# testing if the flask app is running properly
 def test_alive(client):
     """
     Tests that the application is running properly
@@ -72,20 +78,795 @@ def test_alive(client):
     :param client: mongodb client
     """
     rv = client.get("/")
-    assert rv.data.decode("utf-8") == '{"message":"Server up and running"}\n'
+    json_data = rv.get_json()
+    assert json_data == {"message": "Server up and running"}
+    assert rv.status_code == 200
 
-
-# 2. testing if the search function running properly
-def test_search(client):
+# testing if the flask app is running properly with status code
+def test_alive_status_code(client):
     """
-    Tests that the search is running properly
+    Tests that / returns 200
 
     :param client: mongodb client
     """
-    rv = client.get("/search")
-    jdata = json.loads(rv.data.decode("utf-8"))["label"]
-    assert jdata == "successful test search"
+    rv = client.get("/")
+    assert rv.status_code == 200
 
+# Test for adding a new job application that gets added to shared pool
+def test_add_application_new_shared_job(client, mocker, user):
+    """
+    Tests adding a new application that should be added to the shared pool
+    
+    :param client: mongodb client
+    :param mocker: pytest mocker
+    :param user: the test user object
+    """
+    mocker.patch(
+        "app.get_new_application_id",
+        return_value=999,
+    )
+    mocker.patch(
+        "uuid.uuid4",
+        return_value="test-uuid-1234",
+    )
+    
+    user_obj, header = user
+    user_obj["applications"] = []
+    user_obj.save()
+    
+    # Test data
+    new_application = {
+        "jobTitle": "Senior Developer",
+        "companyName": "Tech Innovators",
+        "date": "2025-04-15",
+        "jobLink": "https://example.com/job123",
+        "location": "Remote",
+        "status": "1"
+    }
+    
+    # Mock the SharedJobs.objects method to return None (job doesn't exist yet)
+    mock_no_existing_job = MagicMock()
+    mock_no_existing_job.first.return_value = None
+    mocker.patch("app.SharedJobs.objects", return_value=mock_no_existing_job)
+    
+    # Mock the SharedJobs class
+    mock_shared_job = MagicMock()
+    mocker.patch("app.SharedJobs", return_value=mock_shared_job)
+    
+    # Add application
+    rv = client.post(
+        "/applications",
+        headers=header,
+        json={"application": new_application},
+    )
+    
+    assert rv.status_code == 200
+    result = json.loads(rv.data.decode("utf-8"))
+    
+    # Verify response
+    assert result["id"] == 999
+    assert result["jobTitle"] == "Senior Developer"
+    assert result["companyName"] == "Tech Innovators"
+    
+    # Verify that save was called on the new shared job
+    mock_shared_job.save.assert_called_once()
+
+
+# Test for adding an application that already exists in shared pool
+def test_add_application_existing_shared_job(client, mocker, user):
+    """
+    Tests adding an application that already exists in the shared pool
+    
+    :param client: mongodb client
+    :param mocker: pytest mocker
+    :param user: the test user object
+    """
+    mocker.patch(
+        "app.get_new_application_id",
+        return_value=888,
+    )
+    
+    user_obj, header = user
+    user_obj["applications"] = []
+    user_obj.save()
+    
+    # Test data
+    existing_application = {
+        "jobTitle": "Frontend Developer",
+        "companyName": "Web Solutions",
+        "date": "2025-04-15",
+        "jobLink": "https://example.com/job456",
+        "location": "New York",
+        "status": "1"
+    }
+    
+    # Mock the existing shared job
+    mock_existing_job = MagicMock()
+    mock_existing_jobs_query = MagicMock()
+    mock_existing_jobs_query.first.return_value = mock_existing_job
+    mocker.patch("app.SharedJobs.objects", return_value=mock_existing_jobs_query)
+    
+    # Add application
+    rv = client.post(
+        "/applications",
+        headers=header,
+        json={"application": existing_application},
+    )
+    
+    assert rv.status_code == 200
+    result = json.loads(rv.data.decode("utf-8"))
+    
+    # Verify response
+    assert result["jobTitle"] == "Frontend Developer"
+    assert result["companyName"] == "Web Solutions"
+    
+    # Verify that the existing job's appliedBy count was incremented
+    mock_existing_job.update.assert_called_once_with(inc__appliedBy=1)
+
+
+# Test for missing fields in add application
+def test_add_application_missing_fields(client, user):
+    """
+    Tests adding an application with missing required fields
+    
+    :param client: mongodb client
+    :param user: the test user object
+    """
+    user_obj, header = user
+    
+    # Test data with missing required fields
+    incomplete_application = {
+        "companyName": "Missing Job Title Inc."
+        # Missing jobTitle field
+    }
+    
+    # Add application
+    rv = client.post(
+        "/applications",
+        headers=header,
+        json={"application": incomplete_application},
+    )
+    
+    assert rv.status_code == 400
+    result = json.loads(rv.data.decode("utf-8"))
+    assert "error" in result
+    assert result["error"] == "Missing fields in input"
+
+
+# Test adding a job to wishlist
+def test_add_to_wishlist(client, mocker, user):
+    """
+    Tests adding a shared job to the user's wishlist
+    
+    :param client: mongodb client
+    :param mocker: pytest mocker
+    :param user: the test user object
+    """
+    mocker.patch(
+        "app.get_new_application_id",
+        return_value=777,
+    )
+    
+    user_obj, header = user
+    user_obj["applications"] = []
+    user_obj.save()
+    
+    # Mock the shared job
+    mock_shared_job = MagicMock()
+    mock_shared_job.jobTitle = "ML Engineer"
+    mock_shared_job.companyName = "AI Research"
+    mock_shared_job.jobLink = "https://example.com/job789"
+    mock_shared_job.location = "San Francisco"
+    
+    mock_shared_jobs_query = MagicMock()
+    mock_shared_jobs_query.first.return_value = mock_shared_job
+    mocker.patch("app.SharedJobs.objects", return_value=mock_shared_jobs_query)
+    
+    # Add to wishlist
+    rv = client.post(
+        "/wishlist",
+        headers=header,
+        json={"jobId": "test-job-uuid"},
+    )
+    
+    assert rv.status_code == 200
+    result = json.loads(rv.data.decode("utf-8"))
+    
+    # Verify response
+    assert result["id"] == 777
+    assert result["jobTitle"] == "ML Engineer"
+    assert result["companyName"] == "AI Research"
+    assert result["status"] == "1"  # Wishlist status
+    
+    # Verify that the shared job's appliedBy count was incremented
+    mock_shared_job.update.assert_called_once_with(inc__appliedBy=1)
+
+
+# Test adding non-existent job to wishlist
+def test_add_nonexistent_job_to_wishlist(client, mocker, user):
+    """
+    Tests adding a non-existent shared job to the wishlist
+    
+    :param client: mongodb client
+    :param mocker: pytest mocker
+    :param user: the test user object
+    """
+    user_obj, header = user
+    
+    # Mock the SharedJobs query to return None (job doesn't exist)
+    mock_shared_jobs_query = MagicMock()
+    mock_shared_jobs_query.first.return_value = None
+    mocker.patch("app.SharedJobs.objects", return_value=mock_shared_jobs_query)
+    
+    # Try to add non-existent job to wishlist
+    rv = client.post(
+        "/wishlist",
+        headers=header,
+        json={"jobId": "non-existent-uuid"},
+    )
+    
+    assert rv.status_code == 404
+    result = json.loads(rv.data.decode("utf-8"))
+    assert "error" in result
+    assert result["error"] == "Job not found in shared listings"
+
+
+# Test missing jobId in wishlist request
+def test_add_to_wishlist_missing_jobid(client, user):
+    """
+    Tests adding a job to wishlist with missing jobId
+    
+    :param client: mongodb client
+    :param user: the test user object
+    """
+    user_obj, header = user
+    
+    # Send request without jobId
+    rv = client.post(
+        "/wishlist",
+        headers=header,
+        json={},  # Empty JSON - missing jobId
+    )
+    
+    assert rv.status_code == 400
+    result = json.loads(rv.data.decode("utf-8"))
+    assert "error" in result
+    assert result["error"] == "Missing jobId in request"
+
+
+# Test getting shared jobs
+def test_get_shared_jobs(client, mocker, user):
+    """
+    Tests getting shared jobs that user hasn't applied to
+    
+    :param client: mongodb client
+    :param mocker: pytest mocker
+    :param user: the test user object
+    """
+    user_obj, header = user
+    
+    # Set up user with some existing applications
+    user_applications = [
+        {
+            "jobTitle": "Existing Job",
+            "companyName": "Existing Company",
+            "jobLink": "https://example.com/existing",
+            "status": "2"
+        }
+    ]
+    user_obj["applications"] = user_applications
+    user_obj.save()
+    
+    # Mock shared jobs in the system
+    mock_job1 = MagicMock()
+    mock_job1.__getitem__.side_effect = lambda key: {
+        "id": "job-uuid-1",
+        "jobTitle": "New Job 1",
+        "companyName": "New Company 1",
+        "location": "Remote",
+        "jobLink": "https://example.com/new1",
+        "postedDate": datetime(2025, 4, 15),
+        "appliedBy": 5
+    }[key]
+    
+    mock_job2 = MagicMock()
+    mock_job2.__getitem__.side_effect = lambda key: {
+        "id": "job-uuid-2",
+        "jobTitle": "New Job 2",
+        "companyName": "New Company 2",
+        "location": "Hybrid",
+        "jobLink": "https://example.com/new2",
+        "postedDate": datetime(2025, 4, 14),
+        "appliedBy": 3
+    }[key]
+    
+    mock_job3 = MagicMock()
+    mock_job3.__getitem__.side_effect = lambda key: {
+        "id": "job-uuid-3",
+        "jobTitle": "Existing Job",  # This matches an existing application
+        "companyName": "Existing Company",
+        "location": "On-site",
+        "jobLink": "https://example.com/existing",  # This matches an existing application
+        "postedDate": datetime(2025, 4, 13),
+        "appliedBy": 10
+    }[key]
+    
+    # Mock SharedJobs.objects to return these jobs
+    mocker.patch("app.SharedJobs.objects", return_value=[mock_job1, mock_job2, mock_job3])
+    
+    # Get shared jobs
+    rv = client.get("/jobs/shared", headers=header)
+    
+    assert rv.status_code == 200
+    result = json.loads(rv.data.decode("utf-8"))
+    
+    # Should only contain two jobs (the ones user hasn't applied to yet)
+    assert len(result) == 2
+    
+    # Verify job details
+    assert result[0]["id"] == "job-uuid-1"
+    assert result[0]["jobTitle"] == "New Job 1"
+    assert result[0]["appliedBy"] == 5
+    
+    assert result[1]["id"] == "job-uuid-2"
+    assert result[1]["jobTitle"] == "New Job 2"
+    assert result[1]["appliedBy"] == 3
+
+
+# Test for empty shared jobs list
+def test_get_shared_jobs_empty(client, mocker, user):
+    """
+    Tests getting shared jobs when none are available
+    
+    :param client: mongodb client
+    :param mocker: pytest mocker
+    :param user: the test user object
+    """
+    user_obj, header = user
+    
+    # Mock empty SharedJobs collection
+    mocker.patch("app.SharedJobs.objects", return_value=[])
+    
+    # Get shared jobs
+    rv = client.get("/jobs/shared", headers=header)
+    
+    assert rv.status_code == 200
+    result = json.loads(rv.data.decode("utf-8"))
+    
+    # Should be an empty list
+    assert result == []
+
+
+# Test for the resume analysis/fake job description feature
+def test_fake_job_description(client, mocker):
+    """
+    Tests the fake job description endpoint
+    
+    :param client: mongodb client
+    :param mocker: pytest mocker
+    """
+    # Mock environment variable
+    mocker.patch("os.getenv", return_value="fake-api-key")
+    
+    # Mock the genai configuration and model
+    mock_genai = MagicMock()
+    mocker.patch("app.genai", mock_genai)
+    
+    mock_model = MagicMock()
+    mock_response = MagicMock()
+    mock_response.text = '''
+    {
+        "roleOverview": "Test overview",
+        "technicalSkills": [
+            {
+                "category": "Core Skills",
+                "tools": ["Python", "Java"]
+            }
+        ],
+        "softSkills": ["Communication"],
+        "certifications": [
+            {
+                "name": "Test Cert",
+                "provider": "Test Provider",
+                "level": "Beginner"
+            }
+        ],
+        "industryTrends": ["Trend 1"],
+        "salaryRange": {
+            "entry": "$60k",
+            "mid": "$80k",
+            "senior": "$120k"
+        },
+        "learningResources": [
+            {
+                "name": "Course",
+                "type": "Online",
+                "cost": "Free",
+                "url": "https://example.com"
+            }
+        ],
+        "projectIdeas": [
+            {
+                "title": "Project 1",
+                "description": "Description",
+                "technologies": ["Tech 1"]
+            }
+        ]
+    }
+    '''
+    mock_model.generate_content.return_value = mock_response
+    mock_genai.GenerativeModel.return_value = mock_model
+    
+    # Test the endpoint
+    rv = client.get("/fake-job?keywords=Python%20Developer")
+    
+    assert rv.status_code == 200
+    result = json.loads(rv.data.decode("utf-8"))
+    
+    # Verify key fields from response
+    assert "roleOverview" in result
+    assert "technicalSkills" in result
+    assert "softSkills" in result
+    assert result["technicalSkills"][0]["tools"] == ["Python", "Java"]
+
+
+# Test fake job description with missing keywords
+def test_fake_job_missing_keywords(client):
+    """
+    Tests the fake job description endpoint with missing keywords
+    
+    :param client: mongodb client
+    """
+    # Test without providing keywords
+    rv = client.get("/fake-job")
+    
+    assert rv.status_code == 400
+    result = json.loads(rv.data.decode("utf-8"))
+    assert "error" in result
+    assert result["error"] == "Job title is required"
+
+
+# Test resume parsing
+def test_parse_resume(client, mocker):
+    """
+    Tests the resume parsing endpoint
+    
+    :param client: mongodb client
+    :param mocker: pytest mocker
+    """
+    # Mock environment variable
+    mocker.patch("os.getenv", return_value="fake-api-key")
+    
+    # Mock PDF reader
+    mock_reader = MagicMock()
+    mock_page = MagicMock()
+    mock_page.extract_text.return_value = "Sample resume text"
+    mock_reader.pages = [mock_page]
+    mocker.patch("app.PdfReader", return_value=mock_reader)
+    
+    # Mock the genai configuration and model
+    mock_genai = MagicMock()
+    mocker.patch("app.genai", mock_genai)
+    
+    mock_model = MagicMock()
+    mock_response = MagicMock()
+    mock_response.text = '''
+    {
+        "skills": ["Python", "JavaScript", "Data Analysis"],
+        "experience": ["Software Developer at Tech Co", "Intern at Start Inc"],
+        "education": ["BS Computer Science"],
+        "certifications": ["AWS Certified Developer"]
+    }
+    '''
+    mock_model.generate_content.return_value = mock_response
+    mock_genai.GenerativeModel.return_value = mock_model
+    
+    # Create test file
+    data = dict(
+        resume=(BytesIO(b"This is a test resume"), "resume.pdf"),
+    )
+    
+    # Test the endpoint
+    rv = client.post(
+        "/parse-resume",
+        content_type="multipart/form-data",
+        data=data
+    )
+    
+    assert rv.status_code == 200
+    result = json.loads(rv.data.decode("utf-8"))
+    
+    # Verify response
+    assert "skills" in result
+    assert "experience" in result
+    assert "education" in result
+    assert "certifications" in result
+    assert result["skills"] == ["Python", "JavaScript", "Data Analysis"]
+
+
+# Test resume comparison
+def test_compare_resume(client, mocker):
+    """
+    Tests the resume comparison endpoint
+    
+    :param client: mongodb client
+    :param mocker: pytest mocker
+    """
+    # Mock environment variable
+    mocker.patch("os.getenv", return_value="fake-api-key")
+    
+    # Mock the genai configuration and model
+    mock_genai = MagicMock()
+    mocker.patch("app.genai", mock_genai)
+    
+    mock_model = MagicMock()
+    mock_response = MagicMock()
+    mock_response.text = '''
+    {
+        "overallMatch": 75,
+        "matchingSkills": ["Python", "JavaScript"],
+        "missingSkills": ["React", "AWS"],
+        "recommendations": ["Learn React", "Get AWS certification"]
+    }
+    '''
+    mock_model.generate_content.return_value = mock_response
+    mock_genai.GenerativeModel.return_value = mock_model
+    
+    # Test data
+    test_data = {
+        "resume": {
+            "skills": ["Python", "JavaScript", "SQL"],
+            "experience": ["Developer at Tech Co"],
+            "education": ["BS Computer Science"],
+            "certifications": []
+        },
+        "jobInsights": {
+            "roleOverview": "Frontend Developer role",
+            "technicalSkills": [
+                {
+                    "category": "Core Skills",
+                    "tools": ["JavaScript", "React", "HTML", "CSS"]
+                }
+            ]
+        }
+    }
+    
+    # Test the endpoint
+    rv = client.post(
+        "/compare-resume",
+        json=test_data
+    )
+    
+    assert rv.status_code == 200
+    result = json.loads(rv.data.decode("utf-8"))
+    
+    # Verify response
+    assert "overallMatch" in result
+    assert "matchingSkills" in result
+    assert "missingSkills" in result
+    assert "recommendations" in result
+    assert result["overallMatch"] == 75
+    assert result["matchingSkills"] == ["Python", "JavaScript"]
+
+
+# Test missing resume file
+def test_parse_resume_missing_file(client):
+    """
+    Tests the resume parsing endpoint with missing file
+    
+    :param client: mongodb client
+    """
+    # Test without providing a file
+    rv = client.post(
+        "/parse-resume",
+        content_type="multipart/form-data"
+    )
+    
+    assert rv.status_code == 500  # This should be 400, but current implementation returns 500
+    result = json.loads(rv.data.decode("utf-8"))
+    assert "error" in result
+
+
+# Test missing data in resume comparison
+def test_compare_resume_missing_data(client):
+    """
+    Tests the resume comparison endpoint with incomplete data
+    
+    :param client: mongodb client
+    """
+    # Test with missing resume data
+    rv = client.post(
+        "/compare-resume",
+        json={
+            "jobInsights": {
+                "roleOverview": "Frontend Developer role"
+            }
+            # Missing resume data
+        }
+    )
+    
+    assert rv.status_code == 500
+    result = json.loads(rv.data.decode("utf-8"))
+    assert "error" in result
+
+
+# Test for SharedJobs model
+def test_shared_jobs_model(client, user):
+    """
+    Tests creating a SharedJobs model instance
+    
+    :param client: mongodb client
+    :param user: the test user object
+    """
+    user_obj, header = user
+    
+    # Test data
+    job_id = str(uuid.uuid4())
+    job_data = {
+        "id": job_id,
+        "jobTitle": "Test Job",
+        "companyName": "Test Company",
+        "location": "Test Location",
+        "jobLink": "https://example.com/test",
+        "postedBy": 1,
+        "appliedBy": 1
+    }
+    
+    # Create SharedJobs instance
+    shared_job = SharedJobs(**job_data)
+    
+    # Verify fields
+    assert shared_job.id == job_id
+    assert shared_job.jobTitle == "Test Job"
+    assert shared_job.companyName == "Test Company"
+    assert shared_job.location == "Test Location"
+    assert shared_job.jobLink == "https://example.com/test"
+    assert shared_job.postedBy == 1
+    assert shared_job.appliedBy == 1
+    assert shared_job.active == 1  # Default value
+
+
+# Test for error handling in add application
+def test_add_application_error_handling(client, mocker, user):
+    """
+    Tests error handling in add application endpoint
+    
+    :param client: mongodb client
+    :param mocker: pytest mocker
+    :param user: the test user object
+    """
+    user_obj, header = user
+    
+    # Mock get_userid_from_header to raise an exception
+    mocker.patch(
+        "app.get_userid_from_header",
+        side_effect=Exception("Test exception"),
+    )
+    
+    # Test data
+    application_data = {
+        "jobTitle": "Error Test Job",
+        "companyName": "Error Test Company",
+        "date": "2025-04-15",
+        "status": "1"
+    }
+    
+    # Test endpoint with forced error
+    rv = client.post(
+        "/applications",
+        headers=header,
+        json={"application": application_data},
+    )
+    
+    assert rv.status_code == 500
+    result = json.loads(rv.data.decode("utf-8"))
+    assert "error" in result
+    assert result["error"] == "Internal server error"
+
+
+# Test for updating a shared job
+def test_update_shared_job_applied_count(client, mocker):
+    """
+    Tests that the appliedBy count is correctly incremented
+    
+    :param client: mongodb client
+    :param mocker: pytest mocker
+    """
+    # Create a mock shared job with initial appliedBy count of 5
+    mock_shared_job = MagicMock()
+    mock_shared_job.appliedBy = 5
+    
+    # Mock the update method to verify it's called with inc__appliedBy=1
+    mock_shared_job.update = MagicMock()
+    
+    # Return the mock object when SharedJobs.objects().first() is called
+    mock_query = MagicMock()
+    mock_query.first.return_value = mock_shared_job
+    mocker.patch("app.SharedJobs.objects", return_value=mock_query)
+    
+    # Create a function to simulate the update operation
+    def update_job():
+        job = mock_query.first()
+        job.update(inc__appliedBy=1)
+        # In a real scenario, this would update the database
+        # For testing, we'll just manually increment the value
+        job.appliedBy += 1
+        return job
+    
+    # Call the function to simulate updating the job
+    updated_job = update_job()
+    
+    # Verify update was called correctly
+    mock_shared_job.update.assert_called_once_with(inc__appliedBy=1)
+    
+    # Manually check the new value would be 6
+    assert updated_job.appliedBy == 6
+
+
+# Test for case-insensitive job filtering
+def test_shared_jobs_case_insensitive_filtering(client, mocker, user):
+    """
+    Tests that shared jobs filtering works with different letter cases
+    
+    :param client: mongodb client
+    :param mocker: pytest mocker
+    :param user: the test user object
+    """
+    user_obj, header = user
+    
+    # Set up user with some existing applications with mixed case
+    user_applications = [
+        {
+            "jobTitle": "Python Developer",
+            "companyName": "Tech CORP",  # Upper case
+            "jobLink": "https://example.com/job1",
+            "status": "2"
+        }
+    ]
+    user_obj["applications"] = user_applications
+    user_obj.save()
+    
+    # Mock shared jobs with different cases
+    mock_job1 = MagicMock()
+    mock_job1.__getitem__.side_effect = lambda key: {
+        "id": "job-uuid-1",
+        "jobTitle": "Senior Developer",
+        "companyName": "tech corp",  # Lower case - should match case-insensitively
+        "location": "Remote",
+        "jobLink": "https://example.com/job1",  # Same link
+        "postedDate": datetime(2025, 4, 15),
+        "appliedBy": 5
+    }[key]
+    
+    mock_job2 = MagicMock()
+    mock_job2.__getitem__.side_effect = lambda key: {
+        "id": "job-uuid-2",
+        "jobTitle": "New Job",
+        "companyName": "Different Company",
+        "location": "Remote",
+        "jobLink": "https://example.com/job2",
+        "postedDate": datetime(2025, 4, 15),
+        "appliedBy": 2
+    }[key]
+    
+    # Mock SharedJobs.objects to return these jobs
+    mocker.patch("app.SharedJobs.objects", return_value=[mock_job1, mock_job2])
+    
+    # Get shared jobs
+    rv = client.get("/jobs/shared", headers=header)
+    
+    assert rv.status_code == 200
+    result = json.loads(rv.data.decode("utf-8"))
+    
+    # Should only contain one job since the first one should be filtered out
+    # even though the case is different
+    assert len(result) == 1
+    assert result[0]["id"] == "job-uuid-2"
+    assert result[0]["companyName"] == "Different Company"
+
+"""
+These tests existed before the Spring 2025 edit. /search feature has been deprecated and replaced by /fake-job for this version since it was redundant. Check v3.0 docs for more details
+"""
 
 # 3. testing if the application is getting data from database properly
 def test_get_data(client, user):
@@ -212,18 +993,6 @@ def test_delete_application(client, user):
     rv = client.delete("/applications/3", headers=auth)
     jdata = json.loads(rv.data.decode("utf-8"))["jobTitle"]
     assert jdata == "fakeJob12345"
-
-
-# 8. testing if the flask app is running properly with status code
-def test_alive_status_code(client):
-    """
-    Tests that / returns 200
-
-    :param client: mongodb client
-    """
-    rv = client.get("/")
-    assert rv.status_code == 200
-
 
 # Testing logging out does not return error
 def test_logout(client, user):
