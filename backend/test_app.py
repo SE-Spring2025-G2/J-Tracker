@@ -9,7 +9,7 @@ import json
 import datetime
 from flask_mongoengine import MongoEngine
 import yaml
-from .app import create_app, Users, SharedJobs
+from app import create_app, Users, SharedJobs
 from unittest.mock import patch, MagicMock
 
 # Make sure to add the .yml and .env to repository secrets in order for the CI to run these tests
