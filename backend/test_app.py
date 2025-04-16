@@ -11,6 +11,7 @@ from flask_mongoengine import MongoEngine
 import yaml
 from .app import create_app, Users
 
+# Make sure to add the .yml and .env to repository secrets in order for the CI to run these tests
 
 # Pytest fixtures are useful tools for calling resources
 # over and over, without having to manually recreate them,
