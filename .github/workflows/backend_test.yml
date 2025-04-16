@@ -30,7 +30,15 @@ jobs:
 
       - name: Run tests inside container
         run: |
-          docker run --rm backend-test-image /bin/bash -c "
+          docker run --rm -v ${{ github.workspace }}/test-results:/app/test-results backend-test-image /bin/bash -c "
             pip install pytest &&
-            pytest test_app.py -v -s --junitxml=test-report.xml
+            cd /app &&
+            pytest -v -s --junitxml=/app/test-results/test-report.xml
           "
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results
+          path: test-results/
