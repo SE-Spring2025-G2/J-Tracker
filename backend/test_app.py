@@ -1,5 +1,5 @@
 """
-Test module for the backend
+Test module for the backend. This requires setting up repository secrets. Check the documentation on testing for more details...
 """
 import hashlib
 from io import BytesIO
