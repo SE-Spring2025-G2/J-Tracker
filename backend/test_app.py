@@ -29,8 +29,8 @@ def client():
     app = create_app()
     with open("application.yml") as f:
         info = yaml.load(f, Loader=yaml.FullLoader)
-        username = info["username"]
-        password = info["password"]
+        username = info["USERNAME"]
+        password = info["PASSWORD"]
         app.config["MONGODB_SETTINGS"] = {
             "db": "appTracker",
             "host": f"mongodb+srv://{username}:{password}@applicationtracker.287am.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
@@ -76,16 +76,19 @@ def test_alive(client):
     assert rv.data.decode("utf-8") == '{"message":"Server up and running"}\n'
 
 
-# 2. testing if the search function running properly
-def test_search(client):
-    """
-    Tests that the search is running properly
+"""
+Search feature has been deprecated for this version since it was redundant. Check v3.0 docs for more details
+"""
+# # 2. testing if the search function running properly
+# def test_search(client):
+#     """
+#     Tests that the search is running properly
 
-    :param client: mongodb client
-    """
-    rv = client.get("/search")
-    jdata = json.loads(rv.data.decode("utf-8"))["label"]
-    assert jdata == "successful test search"
+#     :param client: mongodb client
+#     """
+#     rv = client.get("/search")
+#     jdata = json.loads(rv.data.decode("utf-8"))["label"]
+#     assert jdata == "successful test search"
 
 
 # 3. testing if the application is getting data from database properly
