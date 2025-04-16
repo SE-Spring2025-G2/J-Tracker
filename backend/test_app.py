@@ -865,23 +865,8 @@ def test_shared_jobs_case_insensitive_filtering(client, mocker, user):
     assert result[0]["companyName"] == "Different Company"
 
 """
-These tests existed before the Spring 2025 edit
+These tests existed before the Spring 2025 edit. /search feature has been deprecated and replaced by /fake-job for this version since it was redundant. Check v3.0 docs for more details
 """
-
-"""
-Search feature has been deprecated for this version since it was redundant. Check v3.0 docs for more details
-"""
-# # 2. testing if the search function running properly
-# def test_search(client):
-#     """
-#     Tests that the search is running properly
-
-#     :param client: mongodb client
-#     """
-#     rv = client.get("/search")
-#     jdata = json.loads(rv.data.decode("utf-8"))["label"]
-#     assert jdata == "successful test search"
-
 
 # 3. testing if the application is getting data from database properly
 def test_get_data(client, user):
