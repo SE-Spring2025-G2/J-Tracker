@@ -19,7 +19,7 @@ from unittest.mock import patch, MagicMock
 # eliminating the possibility of carry-over from previous tests,
 # unless defined as such.
 # This fixture receives the client returned from create_app
-# in app.py. add, delete
+# in app.py. add, delete, update
 @pytest.fixture
 def client():
     """
