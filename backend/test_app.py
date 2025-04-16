@@ -33,7 +33,7 @@ def client():
         password = info["PASSWORD"]
         app.config["MONGODB_SETTINGS"] = {
             "db": "appTracker",
-            "host": f"mongodb+srv://{username}:{password}@applicationtracker.287am.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
+            "host": f"mongodb+srv://{username}:{password}@cluster0.giavamz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
         }
     db = MongoEngine()
     db.disconnect()
