@@ -9,7 +9,7 @@ import json
 import datetime
 from flask_mongoengine import MongoEngine
 import yaml
-from app import create_app, Users
+from .app import create_app, Users
 
 
 # Pytest fixtures are useful tools for calling resources
