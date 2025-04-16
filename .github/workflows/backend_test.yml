@@ -34,3 +34,10 @@ jobs:
             pip install pytest &&
             pytest test_app.py -v -s --junitxml=test-report.xml
           "
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results
+          path: test-results/

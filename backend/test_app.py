@@ -78,7 +78,9 @@ def test_alive(client):
     :param client: mongodb client
     """
     rv = client.get("/")
-    assert rv.data.decode("utf-8") == '{"message": "Server up and running"}'
+    json_data = rv.get_json()
+    assert json_data == {"message": "Server up and running"}
+    assert rv.status_code == 200
 
 # testing if the flask app is running properly with status code
 def test_alive_status_code(client):
