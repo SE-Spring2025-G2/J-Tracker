@@ -32,9 +32,10 @@ jobs:
       - name: Run tests inside container
         run: |
           docker run --rm backend-test-image /bin/bash -c "
-            pip install pytest &&
-            pytest test_app.py -v -s --junitxml=test-report.xml
+            pip install pytest pytest-cov &&
+            pytest --cov=backend --cov-report=xml test_app.py -v -s --junitxml=test-report.xml
           "
+          
       - name: Upload coverage reports to Codecov
         if: always()
         uses: codecov/codecov-action@v5
