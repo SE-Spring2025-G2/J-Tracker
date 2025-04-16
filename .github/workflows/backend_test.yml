@@ -36,6 +36,7 @@ jobs:
             pytest test_app.py -v -s --junitxml=test-report.xml
           "
       - name: Upload coverage reports to Codecov
+        if: always()
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
