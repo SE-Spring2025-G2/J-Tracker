@@ -3,13 +3,20 @@ Test module for the backend
 """
 import hashlib
 from io import BytesIO
+import uuid
 
 import pytest
 import json
 import datetime
+from datetime import datetime
 from flask_mongoengine import MongoEngine
 import yaml
-from .app import create_app, Users, SharedJobs
+import sys
+import uuid
+import pypdf
+import google.generativeai as genai
+from pypdf import PdfReader
+from .app import create_app, Users, SharedJobs, get_new_application_id, get_new_user_id, get_userid_from_header
 from unittest.mock import patch, MagicMock
 
 # Make sure to add the .yml and .env to repository secrets in order for the CI to run these tests
@@ -101,8 +108,9 @@ def test_add_application_new_shared_job(client, mocker, user):
     :param mocker: pytest mocker
     :param user: the test user object
     """
+    # Use direct function reference for patching
     mocker.patch(
-        "app.get_new_application_id",
+        "backend.app.get_new_application_id",
         return_value=999,
     )
     mocker.patch(
@@ -162,7 +170,7 @@ def test_add_application_existing_shared_job(client, mocker, user):
     :param user: the test user object
     """
     mocker.patch(
-        "app.get_new_application_id",
+        "backend.app.get_new_application_id",
         return_value=888,
     )
     
@@ -243,7 +251,7 @@ def test_add_to_wishlist(client, mocker, user):
     :param user: the test user object
     """
     mocker.patch(
-        "app.get_new_application_id",
+        "backend.app.get_new_application_id",
         return_value=777,
     )
     
@@ -260,7 +268,7 @@ def test_add_to_wishlist(client, mocker, user):
     
     mock_shared_jobs_query = MagicMock()
     mock_shared_jobs_query.first.return_value = mock_shared_job
-    mocker.patch("app.SharedJobs.objects", return_value=mock_shared_jobs_query)
+    mocker.patch("backend.test_app.SharedJobs.objects", return_value=mock_shared_jobs_query)
     
     # Add to wishlist
     rv = client.post(
@@ -296,7 +304,7 @@ def test_add_nonexistent_job_to_wishlist(client, mocker, user):
     # Mock the SharedJobs query to return None (job doesn't exist)
     mock_shared_jobs_query = MagicMock()
     mock_shared_jobs_query.first.return_value = None
-    mocker.patch("app.SharedJobs.objects", return_value=mock_shared_jobs_query)
+    mocker.patch("backend.app.SharedJobs.objects", return_value=mock_shared_jobs_query)
     
     # Try to add non-existent job to wishlist
     rv = client.post(
@@ -392,7 +400,7 @@ def test_get_shared_jobs(client, mocker, user):
     }[key]
     
     # Mock SharedJobs.objects to return these jobs
-    mocker.patch("app.SharedJobs.objects", return_value=[mock_job1, mock_job2, mock_job3])
+    mocker.patch("backend.app.SharedJobs.objects", return_value=[mock_job1, mock_job2, mock_job3])
     
     # Get shared jobs
     rv = client.get("/jobs/shared", headers=header)
@@ -425,7 +433,7 @@ def test_get_shared_jobs_empty(client, mocker, user):
     user_obj, header = user
     
     # Mock empty SharedJobs collection
-    mocker.patch("app.SharedJobs.objects", return_value=[])
+    mocker.patch("backend.app.SharedJobs.objects", return_value=[])
     
     # Get shared jobs
     rv = client.get("/jobs/shared", headers=header)
@@ -450,7 +458,7 @@ def test_fake_job_description(client, mocker):
     
     # Mock the genai configuration and model
     mock_genai = MagicMock()
-    mocker.patch("app.genai", mock_genai)
+    mocker.patch("google.generativeai", mock_genai)
     
     mock_model = MagicMock()
     mock_response = MagicMock()
@@ -542,11 +550,11 @@ def test_parse_resume(client, mocker):
     mock_page = MagicMock()
     mock_page.extract_text.return_value = "Sample resume text"
     mock_reader.pages = [mock_page]
-    mocker.patch("app.PdfReader", return_value=mock_reader)
+    mocker.patch("pypdf.PdfReader", return_value=mock_reader)
     
     # Mock the genai configuration and model
     mock_genai = MagicMock()
-    mocker.patch("app.genai", mock_genai)
+    mocker.patch("google.generativeai", mock_genai)
     
     mock_model = MagicMock()
     mock_response = MagicMock()
@@ -597,7 +605,7 @@ def test_compare_resume(client, mocker):
     
     # Mock the genai configuration and model
     mock_genai = MagicMock()
-    mocker.patch("app.genai", mock_genai)
+    mocker.patch("google.generativeai", mock_genai)
     
     mock_model = MagicMock()
     mock_response = MagicMock()
@@ -739,7 +747,7 @@ def test_add_application_error_handling(client, mocker, user):
     
     # Mock get_userid_from_header to raise an exception
     mocker.patch(
-        "app.get_userid_from_header",
+        "backend.app.get_userid_from_header",
         side_effect=Exception("Test exception"),
     )
     
@@ -782,7 +790,7 @@ def test_update_shared_job_applied_count(client, mocker):
     # Return the mock object when SharedJobs.objects().first() is called
     mock_query = MagicMock()
     mock_query.first.return_value = mock_shared_job
-    mocker.patch("app.SharedJobs.objects", return_value=mock_query)
+    mocker.patch("backend.app.SharedJobs.objects", return_value=mock_query)
     
     # Create a function to simulate the update operation
     def update_job():
@@ -850,7 +858,7 @@ def test_shared_jobs_case_insensitive_filtering(client, mocker, user):
     }[key]
     
     # Mock SharedJobs.objects to return these jobs
-    mocker.patch("app.SharedJobs.objects", return_value=[mock_job1, mock_job2])
+    mocker.patch("backend.app.SharedJobs.objects", return_value=[mock_job1, mock_job2])
     
     # Get shared jobs
     rv = client.get("/jobs/shared", headers=header)
@@ -910,7 +918,7 @@ def test_add_application(client, mocker, user):
     """
     mocker.patch(
         # Dataset is in slow.py, but imported to main.py
-        "app.get_new_user_id",
+        "backend.app.get_new_user_id",
         return_value=-1,
     )
     user, header = user
@@ -1018,7 +1026,7 @@ def test_resume(client, mocker, user):
     """
     mocker.patch(
         # Dataset is in slow.py, but imported to main.py
-        "app.get_new_user_id",
+        "backend.app.get_new_user_id",
         return_value=-1,
     )
     user, header = user
@@ -1038,25 +1046,53 @@ def test_resume(client, mocker, user):
 # 10 New Backend Tests
 
 # 1. Test user signup functionality
-def test_signup(client):
+def test_signup(client, mocker):
     """
     Tests the user signup endpoint
     
     :param client: mongodb client
+    :param mocker: pytest mocker
     """
-    # Data for a new user
+    # Mock get_new_user_id to return a predictable value
+    mocker.patch("backend.app.get_new_user_id", return_value=9999)
+    
+    # Create a unique username with timestamp to avoid conflicts
+    import time
+    unique_username = f"testUser_{int(time.time())}"
+    
+    # Mock the user query to simulate no existing users with this username
+    mock_empty_query = MagicMock()
+    mock_empty_query.__len__ = lambda x: 0  # Make len() return 0
+    mocker.patch("backend.app.Users.objects", return_value=mock_empty_query)
+    
+    # Create test data
     data = {
-        "username": "newTestUser",
+        "username": unique_username,
         "password": "testPassword",
         "fullName": "Test User"
     }
     
+    # Mock the user creation and save methods
+    mock_user = MagicMock()
+    mock_user.to_json.return_value = {
+        "id": 9999,
+        "fullName": "Test User",
+        "username": unique_username
+    }
+    mocker.patch("backend.app.Users", return_value=mock_user)
+    
+    # Test signup successful
     rv = client.post("/users/signup", json=data)
     assert rv.status_code == 200
     result = json.loads(rv.data.decode("utf-8"))
-    assert "id" in result
+    assert result["id"] == 9999
     assert result["fullName"] == "Test User"
-    assert result["username"] == "newTestUser"
+    assert result["username"] == unique_username
+    
+    # Now mock the user query to simulate username already exists
+    mock_existing_query = MagicMock()
+    mock_existing_query.__len__ = lambda x: 1  # Make len() return 1
+    mocker.patch("backend.app.Users.objects", return_value=mock_existing_query)
     
     # Try to create the same user again (should fail)
     rv = client.post("/users/signup", json=data)
@@ -1135,10 +1171,10 @@ def test_update_profile_preferences(client, user):
     assert rv.status_code == 200
     
     # Verify the data was updated
-    user_obj = user_obj._get_collection().find_one({"id": user_obj.id})
-    assert user_obj["skills"] == ["Java", "C++", "Python"]
-    assert user_obj["job_levels"] == ["Senior"]
-    assert user_obj["locations"] == ["Germany", "France"]
+    updated_user = Users.objects(id=user_obj.id).first()
+    assert updated_user["skills"] == ["Java", "C++", "Python"]
+    assert updated_user["job_levels"] == ["Senior"]
+    assert updated_user["locations"] == ["Germany", "France"]
 
 
 # 5. Test get applications when empty
